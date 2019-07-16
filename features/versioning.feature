@@ -11,7 +11,7 @@ Feature: versioning of the project
       fix: this is a fix.
       """
     When I bump the version
-    And I should have a git label "0.0.2" at the last commit
+    And the git label "0,0,2" should be on the last commit
 
 
   Scenario: Generating the change log
