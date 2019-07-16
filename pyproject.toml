@@ -20,6 +20,8 @@ python = "~3.6"  # Compatible python versions must be declared here
 #
 # Optional dependencies to be part of `testing` extra
 pytest = { version = "^5.0", optional = true }
+# Optional dependencies to be part of `bdd` extra
+behave = { version = "^1.2", optional = true }
 
 
 [tool.poetry.dev-dependencies]
@@ -29,6 +31,7 @@ python-semantic-release = "^4.1"
 
 [options.extras_require]
 testing = ["pytest"]
+bdd = ["behave"]
 
 
 [tool.commitizen]
