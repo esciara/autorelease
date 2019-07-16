@@ -1,5 +1,0 @@
-include *.rst *.txt *.ini *.py *.cfg *.yml *.in
-
-prune tmp
-prune instance
-prune .git

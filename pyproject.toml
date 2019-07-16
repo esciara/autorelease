@@ -2,34 +2,33 @@
 name = "autorelease"
 version = "0.1.0"
 description = "autorelease workflow"
-
 license = "LGPL v2.1"
-
 authors = [
     "Mouadh Kaabachi <mouadh.kaabachi@gmail.com>",
     "Emmanuel Sciara <emmanuel.sciara@gmail.com>"
 ]
-
 readme = 'README.rst'
-
 repository = "https://github.com/esciara/autorelease"
 homepage = "https://github.com/esciara/autorelease"
-
 keywords = ['devops', 'release']
+
 
 [tool.poetry.dependencies]
 python = "~3.6"  # Compatible python versions must be declared here
-toml = "^0.9"
-# Dependencies with extras
+# Using a similar approach to `tox` (see `setup.cfg` and `tox.ini` files at https://github.com/tox-dev/tox)
+# and creating extras for use in `tox.ini` instead of using [tool.poetry.dev-dependencies]
+#
+# Optional dependencies to be part of `testing` extra
+pytest = { version = "^5.0", optional = true }
 
-commitizen = "^1.5"
-pip-tools = "^3.8"
-tox = "^3.13"
-pytest = "^5.0"
-python-semantic-release = "^4.1"
 
 [tool.poetry.dev-dependencies]
+tox = "^3.13"
+python-semantic-release = "^4.1"
 
+
+[options.extras_require]
+testing = ["pytest"]
 
 
 [tool.commitizen]
@@ -38,3 +37,8 @@ version = "0.3.0"
 files = [
     "pyproject.toml:version"
 ]
+
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"

@@ -1,5 +1,0 @@
-pip-tools
-tox
-pytest
-commitizen
-python-semantic-release
