@@ -1,14 +1,54 @@
+import os
+
 from behave import given, when, then, step
 from behave4cmd0 import command_steps
 from behave4cmd0 import textutil
-import datetime
+from os.path import dirname, abspath
+from datetime import date
+import gitlab
+import git
 
 
 @given('a starting repo at version "{version}", with a staged file and a changelog file with:')
 def step_starting_repo_with_specific_change_log(context, version):
     assert context.text is not None, "REQUIRE: multiline text"
-    raise NotImplementedError(
-        'STEP: Given a starting repo at version "{version}", with a staged file and a changelog file with:')
+    gitlab_access_token = os.environ.get('GITLAB_TOKEN')
+    gl = gitlab.Gitlab('https://gitlab.groupeonepoint.com', private_token=gitlab_access_token)
+    today_date = date.today().strftime("%d-%m-%Y")
+    project = gl.projects.create({'name': f'autorelease-test-repo-{today_date}'})
+
+    assert gl.projects.list(name="autorelease-test-repo-" + today_date) is not None
+    assert f'autorelease-test-repo-{today_date}' in [project.name for project in gl.projects.list()]
+
+    open("staged_file", 'w')
+    root_dir = dirname(dirname(abspath(__file__)))
+    repo = git.Repo(root_dir)
+    repo.git.add("tests/staged_file")
+    staged_files = repo.index.diff("HEAD")
+
+    assert 'staged_file' in [staged_file.a_blob.path.split('/')[-1] for staged_file in staged_files]
+
+    with open("Changelog.rst", 'w') as changelog:
+        changelog.write('''
+        """
+        Anything I want
+        """
+        ''')
+
+    changelog = open('Changelog.rst', 'r').read()
+    assert changelog == '''
+        """
+        Anything I want
+        """
+        '''
+
+    repo.create_tag(version)
+    assert repo.tags[-1] == version
+
+    project.delete()
+    # todo project.delete(), et supprimer les fichier les autre fichiers dans teardown
+    # raise NotImplementedError(
+    #     'STEP: Given a starting repo at version "{version}", with a staged file and a changelog file with:')
 
 
 @given('a starting repo at version "{version}", with a staged file and a changelog file')
