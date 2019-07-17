@@ -28,14 +28,14 @@ def step_starting_repo_with_specific_change_log(context, version):
 
     assert 'staged_file' in [staged_file.a_blob.path.split('/')[-1] for staged_file in staged_files]
 
-    with open("Changelog.rst", 'w') as changelog:
-        changelog.write('''
-        """
-        Anything I want
-        """
-        ''')
+    # with open("Changelog.rst", 'w') as changelog:
+    #     changelog.write('''
+    #     """
+    #     Anything I want
+    #     """
+    #     ''')
 
-    changelog = open('Changelog.rst', 'r').read()
+    changelog = open(os.path.join(root_dir, 'Changelog.rst'), 'r').read()
     assert changelog == '''
         """
         Anything I want
@@ -100,7 +100,7 @@ def step_file_should_contain_multiline_text_templated(context, filename):
     expected_text = context.text
     if "{__TODAY__}" in context.text or "{__GIT_COMMITER__}" in context.text:
         expected_text = textutil.template_substitute(context.text,
-                                                     __TODAY__=datetime.date.today(),
+                                                     __TODAY__=date.today(),
                                                      __GIT_COMMITER__="TO DO"
                                                      )
     command_steps.step_file_should_contain_text(context, filename, expected_text)
