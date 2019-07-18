@@ -20,14 +20,18 @@ for project in gl.projects.list():
         gitlab_test_project = project
 gitlab_test_project = gitlab_test_project or gl.projects.list(name="autorelease-test-repo-" + TODAY_DATE)
 # todo very bad, change this (pytest conftest like)
-project_root_dir = dirname(dirname(dirname(abspath(__file__))))
+features_test_folder = dirname(dirname(abspath(__file__)))
+
+
 # todo very bad, change this (pytest conftest like)
-repo = git.Repo(project_root_dir)
 
 
 @given('a starting repo at version "{version}", with a staged file and a changelog file with:')
 def step_starting_repo_with_specific_change_log(context, version):
     assert context.text is not None, "REQUIRE: multiline text"
+
+    git.Git(dirname(__file__)).clone(
+        f"https://gitlab.groupeonepoint.com/m.kaabachi/autorelease-test-repo-{TODAY_DATE}.git")
 
     # changelog in the repo
     with open("Changelog.rst", 'w') as changelog:
@@ -36,6 +40,8 @@ def step_starting_repo_with_specific_change_log(context, version):
         Anything I want
         """
         ''')
+
+    repo = git.Repo(os.path.join(features_test_folder, "autorelease-test-repo-" + TODAY_DATE))
 
     repo.git.add("Changelog.rst")
     repo.index.commit("feat: add changelog.rst")
@@ -47,7 +53,7 @@ def step_starting_repo_with_specific_change_log(context, version):
 
     # # todo     And a file named "Changelog.rst" should exist
     # #     And the file "Changelog.rst" should contain:
-    # changelog = open(os.path.join(project_root_dir, 'Changelog.rst'), 'r').read()
+    # changelog = open(os.path.join(features_test_folder, 'Changelog.rst'), 'r').read()
     # # todo change place
     # assert changelog == '''
     #     """
