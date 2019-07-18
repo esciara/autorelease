@@ -8,44 +8,57 @@ from datetime import date
 import gitlab
 import git
 
+GITLAB_ACCESS_TOKEN = os.environ.get('GITLAB_TOKEN')
+
+gl = gitlab.Gitlab('https://gitlab.groupeonepoint.com', private_token=GITLAB_ACCESS_TOKEN)
+TODAY_DATE = date.today().strftime("%d-%m-%Y")
+
+# todo very bad, change this (pytest conftest like)
+# si project "autorelease-test-repo-" + TODAY_DATE existe, pas creer nouveau
+for project in gl.projects.list():
+    if project.name == "autorelease-test-repo-" + TODAY_DATE:
+        gitlab_test_project = project
+gitlab_test_project = gitlab_test_project or gl.projects.list(name="autorelease-test-repo-" + TODAY_DATE)
+# todo very bad, change this (pytest conftest like)
+project_root_dir = dirname(dirname(dirname(abspath(__file__))))
+# todo very bad, change this (pytest conftest like)
+repo = git.Repo(project_root_dir)
+
 
 @given('a starting repo at version "{version}", with a staged file and a changelog file with:')
 def step_starting_repo_with_specific_change_log(context, version):
     assert context.text is not None, "REQUIRE: multiline text"
-    gitlab_access_token = os.environ.get('GITLAB_TOKEN')
-    gl = gitlab.Gitlab('https://gitlab.groupeonepoint.com', private_token=gitlab_access_token)
-    today_date = date.today().strftime("%d-%m-%Y")
-    project = gl.projects.create({'name': f'autorelease-test-repo-{today_date}'})
 
-    assert gl.projects.list(name="autorelease-test-repo-" + today_date) is not None
-    assert f'autorelease-test-repo-{today_date}' in [project.name for project in gl.projects.list()]
-
-    open("staged_file", 'w')
-    root_dir = dirname(dirname(abspath(__file__)))
-    repo = git.Repo(root_dir)
-    repo.git.add("tests/staged_file")
-    staged_files = repo.index.diff("HEAD")
-
-    assert 'staged_file' in [staged_file.a_blob.path.split('/')[-1] for staged_file in staged_files]
-
-    # with open("Changelog.rst", 'w') as changelog:
-    #     changelog.write('''
-    #     """
-    #     Anything I want
-    #     """
-    #     ''')
-
-    changelog = open(os.path.join(root_dir, 'Changelog.rst'), 'r').read()
-    assert changelog == '''
+    # changelog in the repo
+    with open("Changelog.rst", 'w') as changelog:
+        changelog.write('''
         """
         Anything I want
         """
-        '''
+        ''')
+
+    repo.git.add("Changelog.rst")
+    repo.index.commit("feat: add changelog.rst")
+    repo.git.push()
+
+    # a staged file
+    open("staged_file", 'w')
+    repo.git.add("tests/staged_file")
+
+    # # todo     And a file named "Changelog.rst" should exist
+    # #     And the file "Changelog.rst" should contain:
+    # changelog = open(os.path.join(project_root_dir, 'Changelog.rst'), 'r').read()
+    # # todo change place
+    # assert changelog == '''
+    #     """
+    #     Anything I want
+    #     """
+    #     '''
 
     repo.create_tag(version)
-    assert repo.tags[-1] == version
 
-    project.delete()
+    # todo trouver un endroit pour ça gitlab_test_project.delete()
+    # gitlab_test_project.delete()
     # todo project.delete(), et supprimer les fichier les autre fichiers dans teardown
     # raise NotImplementedError(
     #     'STEP: Given a starting repo at version "{version}", with a staged file and a changelog file with:')
@@ -59,18 +72,29 @@ def step_starting_repo(context, version):
 
 @then('a repo named "{repo_prefix}" ending with today\'s date should exist')
 def step_repo_exists(context, repo_prefix):
-    raise NotImplementedError(
-        'STEP: Then I should have a repo named "autorelease-test-repo-" ending with today\'s date')
+    today_date = date.today().strftime("%d-%m-%Y")
+    gl = gitlab.Gitlab('https://gitlab.groupeonepoint.com', private_token=GITLAB_ACCESS_TOKEN)
+    # assert gl.projects.list(name=repo_prefix + today_date) is not None
+    assert f'{repo_prefix}{today_date}' in [project.name for project in gl.projects.list()]
+    # raise NotImplementedError(
+    #     'STEP: Then I should have a repo named "autorelease-test-repo-" ending with today\'s date')
 
 
 @then('the last commit should have label "{version}"')
 def step_last_commit_labelled(context, version):
-    raise NotImplementedError('STEP: Then I should have a git label "{version}" at the last commit')
+    root_dir = dirname(dirname(abspath(__file__)))
+    repo = git.Repo(root_dir)
+    assert repo.tags[-1] == version
+    # raise NotImplementedError('STEP: Then I should have a git label "{version}" at the last commit')
 
 
 @then('the file "{filename}" should be staged in git')
 def step_file_staged(context, filename):
-    raise NotImplementedError('STEP: Then I should have a file named "staged_file" staged in git')
+    root_dir = dirname(dirname(abspath(__file__)))
+    repo = git.Repo(root_dir)
+    staged_files = repo.index.diff("HEAD")
+    assert 'staged_file' in [staged_file.a_blob.path.split('/')[-1] for staged_file in staged_files]
+    # raise NotImplementedError('STEP: Then I should have a file named "staged_file" staged in git')
 
 
 @given('I commit the staged file with commit message:')
