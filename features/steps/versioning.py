@@ -1,139 +1,59 @@
-import os
-
 from behave import given, when, then, step
+from semantic_release import cli
+
 from behave4cmd0 import command_steps
 from behave4cmd0 import textutil
-from os.path import dirname, abspath
-from datetime import date
-import gitlab
-import git
-
-GITLAB_ACCESS_TOKEN = os.environ.get('GITLAB_TOKEN')
-
-gl = gitlab.Gitlab('https://gitlab.groupeonepoint.com', private_token=GITLAB_ACCESS_TOKEN)
-TODAY_DATE = date.today().strftime("%d-%m-%Y")
-
-# todo very bad, change this (pytest conftest like)
-# si project "autorelease-test-repo-" + TODAY_DATE existe, pas creer nouveau
-for project in gl.projects.list():
-    if project.name == "autorelease-test-repo-" + TODAY_DATE:
-        gitlab_test_project = project
-gitlab_test_project = gitlab_test_project or gl.projects.list(name="autorelease-test-repo-" + TODAY_DATE)
-# todo very bad, change this (pytest conftest like)
-features_test_folder = dirname(dirname(abspath(__file__)))
+from behave4cmd0.pathutil import posixpath_normpath
+import datetime
+from git import Repo
+from hamcrest import *
 
 
-# todo very bad, change this (pytest conftest like)
+# -----------------------------------------------------------------------------
+# STEPS: Git related steps
+# TYPE: multiple (@step)
+# -----------------------------------------------------------------------------
+@step('I wait for the CI/CD pipeline to complete successfully')
+def step_wait_for_pipeline_success(context):
+    raise NotImplementedError('STEP: Given I wait for the CI/CD pipeline to complete successfully')
 
 
-@given('a starting repo at version "{version}", with a staged file and a changelog file with:')
+# -----------------------------------------------------------------------------
+# STEPS: Git related steps
+# TYPE: @given
+# -----------------------------------------------------------------------------
+@given('a starting repo at version "{version}", with a staged file and a changelog file with')
 def step_starting_repo_with_specific_change_log(context, version):
-    assert context.text is not None, "REQUIRE: multiline text"
-
-    git.Git(dirname(__file__)).clone(
-        f"https://gitlab.groupeonepoint.com/m.kaabachi/autorelease-test-repo-{TODAY_DATE}.git")
-
-    # changelog in the repo
-    with open("Changelog.rst", 'w') as changelog:
-        changelog.write('''
-        """
-        Anything I want
-        """
-        ''')
-
-    repo = git.Repo(os.path.join(features_test_folder, "autorelease-test-repo-" + TODAY_DATE))
-
-    repo.git.add("Changelog.rst")
-    repo.index.commit("feat: add changelog.rst")
-    repo.git.push()
-
-    # a staged file
-    open("staged_file", 'w')
-    repo.git.add("tests/staged_file")
-
-    # # todo     And a file named "Changelog.rst" should exist
-    # #     And the file "Changelog.rst" should contain:
-    # changelog = open(os.path.join(features_test_folder, 'Changelog.rst'), 'r').read()
-    # # todo change place
-    # assert changelog == '''
-    #     """
-    #     Anything I want
-    #     """
-    #     '''
-
-    repo.create_tag(version)
-
-    # todo trouver un endroit pour ça gitlab_test_project.delete()
-    # gitlab_test_project.delete()
-    # todo project.delete(), et supprimer les fichier les autre fichiers dans teardown
-    # raise NotImplementedError(
-    #     'STEP: Given a starting repo at version "{version}", with a staged file and a changelog file with:')
+    repo = context.repo = Repo.init(posixpath_normpath(context.workdir))
+    command_steps.step_a_file_named_filename_with(context, "ChangeLog.rst")
+    repo.index.add(["ChangeLog.rst"])
+    repo.index.commit("pipo bingo")
+    repo.create_tag("0.0.1")
+    context.surrogate_text = "Lorem ipsum"
+    command_steps.step_a_file_named_filename_with(context, "staged_file")
+    repo.index.add(["staged_file"])
 
 
 @given('a starting repo at version "{version}", with a staged file and a changelog file')
 def step_starting_repo(context, version):
-    context.text = "Anything I want"
+    context.surrogate_text = """
+0.0.1 (2019-06-12)
+------------------
+
+New
+~~~
+- something new. [Geronimo]
+"""
     step_starting_repo_with_specific_change_log(context, version)
 
 
-@then('a repo named "{repo_prefix}" ending with today\'s date should exist')
-def step_repo_exists(context, repo_prefix):
-    today_date = date.today().strftime("%d-%m-%Y")
-    gl = gitlab.Gitlab('https://gitlab.groupeonepoint.com', private_token=GITLAB_ACCESS_TOKEN)
-    # assert gl.projects.list(name=repo_prefix + today_date) is not None
-    assert f'{repo_prefix}{today_date}' in [project.name for project in gl.projects.list()]
-    # raise NotImplementedError(
-    #     'STEP: Then I should have a repo named "autorelease-test-repo-" ending with today\'s date')
-
-
-@then('the last commit should have label "{version}"')
-def step_last_commit_labelled(context, version):
-    root_dir = dirname(dirname(abspath(__file__)))
-    repo = git.Repo(root_dir)
-    assert repo.tags[-1] == version
-    # raise NotImplementedError('STEP: Then I should have a git label "{version}" at the last commit')
-
-
-@then('the file "{filename}" should be staged in git')
-def step_file_staged(context, filename):
-    root_dir = dirname(dirname(abspath(__file__)))
-    repo = git.Repo(root_dir)
-    staged_files = repo.index.diff("HEAD")
-    assert 'staged_file' in [staged_file.a_blob.path.split('/')[-1] for staged_file in staged_files]
-    # raise NotImplementedError('STEP: Then I should have a file named "staged_file" staged in git')
-
-
-@given('I commit the staged file with commit message:')
+@given('I commit the staged file with commit message')
 def step_commit_with_message(context):
-    assert context.text is not None, "REQUIRE: multiline text"
-    raise NotImplementedError('STEP: Given I commit the staged file with commit message')
+    repo = context.repo
+    repo.index.commit(context.text)
 
-
-@when('I bump the version')
-def step_bump_version(context):
-    raise NotImplementedError('STEP: When I bump the version')
-
-
-@when('the git label "{version}" should be on the last commit')
-def step_label_should_be_on_last_commit(context, version):
-    raise NotImplementedError('STEP: When I should have a git label "0.0.2" at the last commit')
-
-
-@when('I generate the change log')
-def step_generate_change_log(context):
-    raise NotImplementedError('STEP: When I generate the change log')
-
-
-@then('the file "{filename}" should contain (templated):')
-def step_file_should_contain_multiline_text_templated(context, filename):
-    assert context.text is not None, "REQUIRE: multiline text"
-    expected_text = context.text
-    if "{__TODAY__}" in context.text or "{__GIT_COMMITER__}" in context.text:
-        expected_text = textutil.template_substitute(context.text,
-                                                     __TODAY__=date.today(),
-                                                     __GIT_COMMITER__="TO DO"
-                                                     )
-    command_steps.step_file_should_contain_text(context, filename, expected_text)
+    # assert context.text is not None, "REQUIRE: multiline text"
+    # raise NotImplementedError('STEP: Given I commit the staged file with commit message')
 
 
 @given('the current branch is "{branch_name}"')
@@ -146,14 +66,79 @@ def step_create_pr(context, source_branch_name, target_branch_name):
     raise NotImplementedError('STEP: Given I create a PR from "pr_branch" to "master"')
 
 
-@step('I wait for the CI/CD pipeline to complete successfully')
-def step_wait_for_pipeline_success(context):
-    raise NotImplementedError('STEP: Given I wait for the CI/CD pipeline to complete successfully')
+# -----------------------------------------------------------------------------
+# STEPS: Git related steps
+# TYPE: @when
+# -----------------------------------------------------------------------------
+@when('I bump the version')
+def step_bump_version(context):
+    cli.version()
+    # raise NotImplementedError('STEP: When I bump the version')
+
+
+@when('the git label "{version}" should be on the last commit')
+def step_label_should_be_on_last_commit(context, version):
+    raise NotImplementedError('STEP: When I should have a git label "0.0.2" at the last commit')
+
+
+@when('I generate the change log')
+def step_generate_change_log(context):
+    raise NotImplementedError('STEP: When I generate the change log')
 
 
 @when('I merge the PR')
 def step_merge_pr(context):
     raise NotImplementedError('STEP: When I merge the PR')
+
+
+# -----------------------------------------------------------------------------
+# STEPS: Git related steps
+# TYPE: @then
+# -----------------------------------------------------------------------------
+@then('a local repo should exist')
+def step_repo_exists(context):
+    try:
+        assert_that(context.repo, not_none(), "The repo should exist.")
+    except AttributeError:
+        assert False, "The repo should exist."
+
+
+@then('a repo named "{repo_prefix}" ending with today\'s date should exist on GitLab')
+def step_gitlab_repo_exists(context, repo_prefix):
+    raise NotImplementedError(
+        'STEP: Then I should have a repo named "autorelease-test-repo-" ending with today\'s date')
+
+
+@then('the local repo should have "{num_of_commits}" commit')
+def step_impl(context, num_of_commits):
+    assert_that(list(context.repo.iter_commits()), has_length(1))
+
+
+@then('the last commit should have be tagged "{tag_name}"')
+def step_last_commit_labelled(context, tag_name):
+    assert_that(context.repo.tags[tag_name].commit, equal_to(context.repo.head.commit))
+
+
+@then('the file "{filename}" should be in the last commit')
+def step_file_staged(context, filename):
+    assert_that(context.repo.head.commit.stats.files, has_key(filename))
+
+
+@then('the file "{filename}" should be staged in git')
+def step_file_staged(context, filename):
+    assert_that([item.a_path for item in context.repo.index.diff("HEAD")], contains(filename))
+
+
+@then('the file "{filename}" should contain (templated)')
+def step_file_should_contain_multiline_text_templated(context, filename):
+    assert context.text is not None, "REQUIRE: multiline text"
+    expected_text = context.text
+    if "{__TODAY__}" in context.text or "{__GIT_COMMITER__}" in context.text:
+        expected_text = textutil.template_substitute(context.text,
+                                                     __TODAY__=datetime.date.today(),
+                                                     __GIT_COMMITER__="TO DO"
+                                                     )
+    command_steps.step_file_should_contain_text(context, filename, expected_text)
 
 
 @then('the file "{filename}" should have been changed in the last commit')

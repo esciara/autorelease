@@ -128,19 +128,23 @@ def step_use_directory_as_working_directory(context, directory):
 # -----------------------------------------------------------------------------
 # STEPS: Create files with contents
 # -----------------------------------------------------------------------------
-@given(u'a file named "{filename}" and encoding="{encoding}" with:')
+@given(u'a file named "{filename}" and encoding="{encoding}" with')
 def step_a_file_named_filename_and_encoding_with(context, filename, encoding):
     """Creates a textual file with the content provided as docstring."""
     __encoding_is_valid = True
-    assert context.text is not None, "ENSURE: multiline text is provided."
+    text_to_use = context.text
+    if not hasattr("context", "surrogate_text"):
+        text_to_use = context.surrogate_text
+    else:
+        assert context.text is not None, "ENSURE: multiline text is provided."
     assert not os.path.isabs(filename)
     assert __encoding_is_valid
     command_util.ensure_workdir_exists(context)
     filename2 = os.path.join(context.workdir, filename)
-    pathutil.create_textfile_with_contents(filename2, context.text, encoding)
+    pathutil.create_textfile_with_contents(filename2, text_to_use, encoding)
 
 
-@given(u'a file named "{filename}" with:')
+@given(u'a file named "{filename}" with')
 def step_a_file_named_filename_with(context, filename):
     """Creates a textual file with the content provided as docstring."""
     step_a_file_named_filename_and_encoding_with(context, filename, "UTF-8")
@@ -212,7 +216,7 @@ def step_it_should_fail(context):
     assert_that(context.command_result.returncode, is_not(equal_to(0)),
                 context.command_result.output)
 
-@then(u'it should pass with:')
+@then(u'it should pass with')
 def step_it_should_pass_with(context):
     '''
     EXAMPLE:
@@ -229,7 +233,7 @@ def step_it_should_pass_with(context):
                 context.command_result.output)
 
 
-@then(u'it should fail with:')
+@then(u'it should fail with')
 def step_it_should_fail_with(context):
     '''
     EXAMPLE:
@@ -337,7 +341,7 @@ def step_command_output_should_not_contain_exactly_text(context, text):
     textutil.assert_text_should_not_contain_exactly(actual_output, expected_text)
 
 
-@then(u'the command output should contain:')
+@then(u'the command output should contain')
 def step_command_output_should_contain(context):
     '''
     EXAMPLE:
@@ -384,13 +388,13 @@ def step_command_output_should_contain_multiple_times(context, count):
     step_command_output_should_contain_text_multiple_times(context,
                                                            context.text, count)
 
-@then(u'the command output should contain exactly:')
+@then(u'the command output should contain exactly')
 def step_command_output_should_contain_exactly_with_multiline_text(context):
     assert context.text is not None, "REQUIRE: multi-line text"
     step_command_output_should_contain_exactly_text(context, context.text)
 
 
-@then(u'the command output should not contain exactly:')
+@then(u'the command output should not contain exactly')
 def step_command_output_should_contain_not_exactly_with_multiline_text(context):
     assert context.text is not None, "REQUIRE: multi-line text"
     step_command_output_should_not_contain_exactly_text(context, context.text)
@@ -545,13 +549,13 @@ def step_file_should_not_contain_text(context, filename, text):
     # DISABLED: assert_that(file_contents, is_not(contains_string(text)))
 
 
-@then(u'the file "{filename}" should contain:')
+@then(u'the file "{filename}" should contain')
 def step_file_should_contain_multiline_text(context, filename):
     assert context.text is not None, "REQUIRE: multiline text"
     step_file_should_contain_text(context, filename, context.text)
 
 
-@then(u'the file "{filename}" should not contain:')
+@then(u'the file "{filename}" should not contain')
 def step_file_should_not_contain_multiline_text(context, filename):
     assert context.text is not None, "REQUIRE: multiline text"
     step_file_should_not_contain_text(context, filename, context.text)
