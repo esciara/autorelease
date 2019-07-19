@@ -5,7 +5,6 @@ from behave4cmd0.pathutil import posixpath_normpath
 import datetime
 from git import Repo
 from hamcrest import *
-import os
 
 
 # -----------------------------------------------------------------------------
@@ -25,12 +24,15 @@ def step_wait_for_pipeline_success(context):
 def step_starting_repo_with_specific_change_log(context, version):
     repo = context.repo = Repo.init(posixpath_normpath(context.workdir))
     command_steps.step_a_file_named_filename_with(context, "ChangeLog.rst")
-    repo.index.add(["ChangeLog.rst"])
-    repo.index.commit("pipo bingo")
+    repo.git.add(["ChangeLog.rst"])
+    repo.git.commit(m="pipo bingo")
+    origin = repo.create_remote('origin', context.gitlab_project.http_url_to_repo)
+    origin.push(repo.heads.master, force=True)
+    # origin.push(repo.heads.master, mirror=True, force=True)
     repo.create_tag("0.0.1")
     context.surrogate_text = "Lorem ipsum"
     command_steps.step_a_file_named_filename_with(context, "staged_file")
-    repo.index.add(["staged_file"])
+    repo.git.add(["staged_file"])
 
 
 @given('a starting repo at version "{version}", with a staged file and a changelog file')
@@ -98,15 +100,14 @@ def step_repo_exists(context):
         assert False, "The repo should exist."
 
 
-@then('a repo named "{repo_prefix}" ending with today\'s date should exist on GitLab')
-def step_gitlab_repo_exists(context, repo_prefix):
-    raise NotImplementedError(
-        'STEP: Then I should have a repo named "autorelease-test-repo-" ending with today\'s date')
+@then('the local repo has for remote repo the GitLab project (autorelease-test-repo-[TODAY])')
+def step_gitlab_repo_exists(context):
+    assert_that(context.gitlab_project.http_url_to_repo, equal_to(next(context.repo.remotes.origin.urls)))
 
 
-@then('the local repo should have "{num_of_commits}" commit')
+@then('the local repo should have "{num_of_commits:int}" commit')
 def step_impl(context, num_of_commits):
-    assert_that(list(context.repo.iter_commits()), has_length(1))
+    assert_that(list(context.repo.iter_commits()), has_length(num_of_commits))
 
 
 @then('the last commit should have be tagged "{tag_name}"')
@@ -115,7 +116,7 @@ def step_last_commit_labelled(context, tag_name):
 
 
 @then('the file "{filename}" should be in the last commit')
-def step_file_staged(context, filename):
+def step_file_in_head_commit(context, filename):
     assert_that(context.repo.head.commit.stats.files, has_key(filename))
 
 
