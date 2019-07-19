@@ -4,19 +4,19 @@ Feature: versioning of the project
   I want a pipeline to version and generate the changelog of my project
 
 
-#  Background:
-#    Given a new working directory
-#    And a starting repo at version "0.0.1", with a staged file and a changelog file
-#
-#  Scenario: Bumping the version
-#    Given I commit the staged file with commit message
-#      """
-#      fix: this is a fix.
-#      """
-#    When I bump the version
-#    And the git label "0,0,2" should be on the last commit
-#
-#
+  Background:
+    Given a new working directory
+    And a starting repo at version "0.0.1", with a staged file and a changelog file
+
+  Scenario: Bumping the version
+    Given I commit the staged file with commit message
+      """
+      fix: this is a fix.
+      """
+    When I bump the version
+    And the git label "0.0.2" should be on the last commit
+
+
 #  Scenario: Generating the change log
 #    Given I commit the staged file with commit message
 #      """

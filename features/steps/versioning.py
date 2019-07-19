@@ -1,11 +1,12 @@
 from behave import given, when, then, step
+from semantic_release import cli
+
 from behave4cmd0 import command_steps
 from behave4cmd0 import textutil
 from behave4cmd0.pathutil import posixpath_normpath
 import datetime
 from git import Repo
 from hamcrest import *
-import os
 
 
 # -----------------------------------------------------------------------------
@@ -48,8 +49,11 @@ New
 
 @given('I commit the staged file with commit message')
 def step_commit_with_message(context):
-    assert context.text is not None, "REQUIRE: multiline text"
-    raise NotImplementedError('STEP: Given I commit the staged file with commit message')
+    repo = context.repo
+    repo.index.commit(context.text)
+
+    # assert context.text is not None, "REQUIRE: multiline text"
+    # raise NotImplementedError('STEP: Given I commit the staged file with commit message')
 
 
 @given('the current branch is "{branch_name}"')
@@ -68,7 +72,8 @@ def step_create_pr(context, source_branch_name, target_branch_name):
 # -----------------------------------------------------------------------------
 @when('I bump the version')
 def step_bump_version(context):
-    raise NotImplementedError('STEP: When I bump the version')
+    cli.version()
+    # raise NotImplementedError('STEP: When I bump the version')
 
 
 @when('the git label "{version}" should be on the last commit')
