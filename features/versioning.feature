@@ -4,10 +4,10 @@ Feature: versioning of the project
   I want a pipeline to version and generate the changelog of my project
 
 
-#  Background:
-#    Given a new working directory
-#    And a starting repo at version "0.0.1", with a staged file and a changelog file
-#
+  Background:
+    Given a new working directory
+    And a starting repo at version "0.0.1", with a staged file and a changelog file
+
 #  Scenario: Bumping the version
 #    Given I commit the staged file with commit message
 #      """
@@ -33,12 +33,14 @@ Feature: versioning of the project
 #      - this is a fix. [{__GIT_COMMITER__}]
 #      """
 #
-#  Scenario: Generate change logs and update version following a PR merge to master
-#    Given the current branch is "pr_branch"
-#    And I commit the staged file with commit message
-#      """
-#      fix: this is a fix.
-#      """
+  Scenario: Generate change logs and update version following a PR merge to master
+    Given a repo branch named "pr_branch"
+    And the repo branch "pr_branch" is checked out
+    And the staged files are committed with message:
+      """
+      fix: this is a fix.
+      """
+    And the repo is pushed
 #    And I create a PR from "pr_branch" to "master"
 #    And I wait for the CI/CD pipeline to complete successfully
 #    When I merge the PR

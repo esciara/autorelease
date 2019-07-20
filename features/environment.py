@@ -115,7 +115,8 @@ def setup_gitlab_project(context):
     # Create new project if none found
     if target_project is None:
         target_project = gl.projects.create({"name": project_name})
-    # Unprotect the master branch
-    target_project.branches.get('master').unprotect()
+    # Unprotect all protected branches
+    for branch in target_project.protectedbranches.list():
+        target_project.branches.get(branch.name).unprotect()
     # Make project available in context
     context.gitlab_project = target_project

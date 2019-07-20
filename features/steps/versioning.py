@@ -23,15 +23,25 @@ def step_wait_for_pipeline_success(context):
 @given('a starting repo at version "{version}", with a staged file and a changelog file with')
 def step_starting_repo_with_specific_change_log(context, version):
     repo = context.repo = Repo.init(posixpath_normpath(context.workdir))
+
     command_steps.step_a_file_named_filename_with(context, "ChangeLog.rst")
+
     repo.git.add(["ChangeLog.rst"])
+
     repo.git.commit(m="pipo bingo")
+
     origin = repo.create_remote('origin', context.gitlab_project.http_url_to_repo)
-    origin.push(repo.heads.master, force=True)
-    # origin.push(repo.heads.master, mirror=True, force=True)
+    origin.push(repo.head.ref, force=True)
+
+    # Make sure test branch is unprotected in GitLab, which protects first pushed
+    # branches
+    context.gitlab_project.branches.get(repo.head.ref.name).unprotect()
+
     repo.create_tag("0.0.1")
+
     context.surrogate_text = "Lorem ipsum"
     command_steps.step_a_file_named_filename_with(context, "staged_file")
+
     repo.git.add(["staged_file"])
 
 
@@ -48,15 +58,38 @@ New
     step_starting_repo_with_specific_change_log(context, version)
 
 
-@given('I commit the staged file with commit message')
+@given('a repo branch named "{branch_name}"')
+def step_set_current_branch(context, branch_name):
+    context.repo.create_head(branch_name)
+
+
+@given('the repo branch "{branch_name}" is checked out')
+def step_set_current_branch(context, branch_name):
+    context.repo.heads[branch_name].checkout()
+
+
+@given('the staged files are committed with message:')
+@given('the staged files are committed with message')
 def step_commit_with_message(context):
     assert context.text is not None, "REQUIRE: multiline text"
-    raise NotImplementedError('STEP: Given I commit the staged file with commit message')
+    context.repo.index.commit(context.text)
 
 
-@given('the current branch is "{branch_name}"')
-def step_current_branch_is(context, branch_name):
-    raise NotImplementedError('STEP: Given the current branch is "pr_branch"')
+@given('the repo is pushed')
+def step_push_repo(context):
+    # context.repo.git.push(f"{branch_name}:{branch_name}", force=True)
+    # context.repo.git.push("origin", f"{branch_name}:{branch_name}", force=True)
+    # context.repo.remotes.origin.push(set_upstream=True, force=True)
+    # context.repo.git.push("--set-upstream", "origin", branch_name, force=True)
+    # print(f"remote_name: {context.repo.head.ref.remote_name}")
+    # origin = context.repo.remotes.origin
+    # context.repo.create_head('master', origin.refs.master)
+    # context.repo.remotes.origin.push(force=True)
+    context.repo.git.push("--set-upstream",
+                          context.repo.remotes.origin,
+                          context.repo.head.ref,
+                          force=True)
+
 
 
 @given('I create a PR from "{source_branch_name}" to "{target_branch_name}"')
@@ -98,6 +131,16 @@ def step_repo_exists(context):
         assert_that(context.repo, not_none(), "The repo should exist.")
     except AttributeError:
         assert False, "The repo should exist."
+
+
+@then('a repo branch named "{branch_name}" should exist')
+def step_repo_branch_exists(context, branch_name):
+    assert_that([head.name for head in context.repo.heads], has_item(branch_name))
+
+
+@then('the repo head should be "{branch_name}"')
+def step_repo_head_should_be_branch(context, branch_name):
+    assert_that(context.repo.head.ref.name, equal_to(branch_name))
 
 
 @then('the local repo has for remote repo the GitLab project (autorelease-test-repo-[TODAY])')
