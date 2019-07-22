@@ -1,0 +1,28 @@
+stages:
+  - test
+  - versioning
+  - release
+
+test:
+  image: alpine:latest
+  stage: test
+  script:
+    - echo "Simulate test stage successful"
+  only:
+    - merge_requests
+
+versioning:
+  image: python:3.6
+  stage: versioning
+  script:
+    - echo "Simulate versioning stage successful"
+  only:
+    - master
+
+release:
+  image: python:3.6
+  stage: release
+  script:
+    - echo "Simulate release stage successful"
+  only:
+    - tags
