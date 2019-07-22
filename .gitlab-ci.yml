@@ -1,0 +1,3 @@
+# Uncomment !include when ready
+include:
+  - ".gitlab-ci.autorelease-base.yml"

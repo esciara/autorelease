@@ -50,6 +50,7 @@ def before_feature(context, feature):
 def before_scenario(context, scenario):
     if active_tag_matcher.should_exclude_with(scenario.effective_tags):
         scenario.skip(reason=active_tag_matcher.exclude_reason)
+    delete_all_opened_gitlab_project_mergerequests(context)
 
 
 # -----------------------------------------------------------------------------
@@ -120,3 +121,8 @@ def setup_gitlab_project(context):
         target_project.branches.get(branch.name).unprotect()
     # Make project available in context
     context.gitlab_project = target_project
+
+def delete_all_opened_gitlab_project_mergerequests(context):
+    for mr in context.gitlab_project.mergerequests.list(state="opened"):
+        mr.delete()
+

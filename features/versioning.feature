@@ -36,14 +36,15 @@ Feature: versioning of the project
   Scenario: Generate change logs and update version following a PR merge to master
     Given a repo branch named "pr_branch"
     And the repo branch "pr_branch" is checked out
-    And the staged files are committed with message:
+    And the repo index is committed with message:
       """
       fix: this is a fix.
       """
     And the repo is pushed
-#    And I create a PR from "pr_branch" to "master"
+    And a merge request from "pr_branch" to "master"
+    When I merge the merge request
 #    And I wait for the CI/CD pipeline to complete successfully
-#    When I merge the PR
-#    And I wait for the CI/CD pipeline to complete successfully
-#    Then the file "Changelog.rst" should have been changed in the last commit
-#    And a new version tag of format "x.x.x" should have been created on the last commit
+    And I pull the repo
+    And I checkout the "master" branch
+    Then the repo head commit should contain the file "ChangeLog.rst"
+    And the repo head commit should be tagged "0.0.2"
