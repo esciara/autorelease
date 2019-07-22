@@ -1,4 +1,6 @@
 from behave import given, when, then, step
+from semantic_release import cli
+
 from behave4cmd0 import command_steps
 from behave4cmd0 import textutil
 from behave4cmd0.pathutil import posixpath_normpath
@@ -134,13 +136,19 @@ def step_create_pr(context, source_branch_name, target_branch_name):
     )
 
 
+@given('I commit the staged file with commit message')
+def step_commit_st_file(context):
+    context.repo.index.commit(context.text)
+
+
 # -----------------------------------------------------------------------------
 # STEPS: Git related steps
 # TYPE: @when
 # -----------------------------------------------------------------------------
 @when('I bump the version')
 def step_bump_version(context):
-    raise NotImplementedError('STEP: When I bump the version')
+    # raise NotImplementedError('STEP: When I bump the version')
+    cli.version()
 
 
 @when('the git label "{version}" should be on the last commit')
@@ -150,7 +158,8 @@ def step_label_should_be_on_last_commit(context, version):
 
 @when('I generate the change log')
 def step_generate_change_log(context):
-    raise NotImplementedError('STEP: When I generate the change log')
+    cli.changelog()
+    # raise NotImplementedError('STEP: When I generate the change log')
 
 
 @when('I merge the merge request')
@@ -248,7 +257,7 @@ def step_file_should_contain_multiline_text_templated(context, filename):
     expected_text = context.text
     if "{__TODAY__}" in context.text or "{__GIT_COMMITER__}" in context.text:
         expected_text = textutil.template_substitute(context.text,
-                                                     __TODAY__=datetime.date.today(),
+                                                     __TODAY__=str(datetime.date.today()),
                                                      __GIT_COMMITER__="TO DO"
                                                      )
     command_steps.step_file_should_contain_text(context, filename, expected_text)
