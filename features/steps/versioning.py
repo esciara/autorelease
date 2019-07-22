@@ -148,7 +148,7 @@ def step_commit_st_file(context):
 @when('I bump the version')
 def step_bump_version(context):
     # raise NotImplementedError('STEP: When I bump the version')
-    cli.version()
+    cli.version(force_level=None)
 
 
 @when('the git label "{version}" should be on the last commit')
