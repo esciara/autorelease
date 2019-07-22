@@ -4,7 +4,9 @@ from behave4cmd0 import textutil
 from behave4cmd0.pathutil import posixpath_normpath
 import datetime
 from git import Repo
+from git.exc import GitCommandError
 from hamcrest import *
+from environment import raise_config_exception_git
 
 
 # -----------------------------------------------------------------------------
@@ -31,8 +33,16 @@ def step_starting_repo_with_specific_change_log(context, version):
 
     repo.create_tag("0.0.1")
 
+    print("context.gitlab_project.http_url_to_repo")
+    print(context.gitlab_project.http_url_to_repo)
     origin = repo.create_remote('origin', context.gitlab_project.http_url_to_repo)
-    origin.push(repo.head.ref, force=True)
+    try:
+        origin.push(repo.head.ref, force=True)
+    except GitCommandError as e:
+        if e.status == 128:
+            raise_config_exception_git()
+        else:
+            raise e
 
     # Make sure test branch is unprotected in GitLab, which protects first pushed
     # branches
