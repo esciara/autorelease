@@ -7,7 +7,6 @@ from semantic_release import cli
 from behave4cmd0 import command_steps
 from behave4cmd0 import textutil
 from behave4cmd0.pathutil import posixpath_normpath
-from gitchangelog.gitchangelog import changelog
 import datetime
 from git import Repo
 from hamcrest import *
@@ -152,12 +151,14 @@ def step_commit_st_file(context):
 @when('I bump the version')
 def step_bump_version(context):
     # raise NotImplementedError('STEP: When I bump the version')
-    cli.version(force_level=None)
+    cli.version(force_level=None, noop=False)
 
 
 @when('the git label "{version}" should be on the last commit')
 def step_label_should_be_on_last_commit(context, version):
-    pass
+    # repo head commit should be tagged "0.0.2"
+    assert_that(context.repo.head.reference.commit.message, contains_string(version),
+                "last commit should contains " + version)
     # step_tag_should_exits(context, tag_name)
     # assert_that(context.repo.tags[tag_name].commit, equal_to(context.repo.head.commit),
     #             "Commits for HEAD and tag should be the same.")
