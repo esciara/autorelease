@@ -1,9 +1,13 @@
+import os
+import subprocess
+
 from behave import given, when, then, step
 from semantic_release import cli
 
 from behave4cmd0 import command_steps
 from behave4cmd0 import textutil
 from behave4cmd0.pathutil import posixpath_normpath
+from gitchangelog.gitchangelog import changelog
 import datetime
 from git import Repo
 from hamcrest import *
@@ -153,12 +157,19 @@ def step_bump_version(context):
 
 @when('the git label "{version}" should be on the last commit')
 def step_label_should_be_on_last_commit(context, version):
-    raise NotImplementedError('STEP: When I should have a git label "0.0.2" at the last commit')
+    pass
+    # step_tag_should_exits(context, tag_name)
+    # assert_that(context.repo.tags[tag_name].commit, equal_to(context.repo.head.commit),
+    #             "Commits for HEAD and tag should be the same.")
+    # raise NotImplementedError('STEP: When I should have a git label "0.0.2" at the last commit')
 
 
 @when('I generate the change log')
 def step_generate_change_log(context):
-    cli.changelog()
+    # cli.changelog()
+    # subprocess.call("gitchangelog > Changelog.rst")
+    # todo fix gitchangelog() api call
+    os.system("gitchangelog > Changelog.rst")
     # raise NotImplementedError('STEP: When I generate the change log')
 
 
