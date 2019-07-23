@@ -1,0 +1,29 @@
+To run the functional (BDD) tests (through running ``tox -e bdd`` or ``behave``),
+proper credentials for using git and for using the GitLab API must be present on
+your system.
+
+PREREQUISITE
+
+You must first create an access token on your GitLab instance (See
+https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html for
+instructions). You might or might not want to give full access to the token
+(I did and have not looked at what is the minimal requirement).
+
+CREDENTIALS FOR GIT
+
+Please refer to https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage
+for more info. The approach we used is the following:
+
+- use the 'store' mode by running the command line:
+```
+$ git config --global credential.helper 'store --file ~/.git-credentials'
+```
+- update your `~/.git-credentials` with: `https://username:access_token@your.gitlab-server.com`
+
+CREDENTIALS FOR GITLAB API
+
+Credentials must be written in the `secrets/gitlab-python.cfg`, which has
+been added to the `.gitignore` file (so it is excluded from the repo).
+Please refer to https://python-gitlab.readthedocs.io/en/stable/cli.html#content ,
+which details the content needed in this file. In our setup, the server declared
+as ``default`` will be used.

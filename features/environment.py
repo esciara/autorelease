@@ -9,6 +9,7 @@ from behave.tag_matcher import ActiveTagMatcher, setup_active_tag_values
 from behave4cmd0.setup_command_shell import setup_command_shell_processors4behave
 import platform
 import sys
+import os
 import six
 import gitlab
 import datetime
@@ -70,38 +71,17 @@ def setup_python_path():
 
 def setup_gitlab_project(context):
     """
-    For this setup to work, proper credentials for using git and for using the
-    GitLab API must be present on your system.
-
-    PREREQUISITE
-
-    You must first create an access token on your GitLab instance. See
-    https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html for
-    instructions. You might or might not want to give full access to the token
-    (I did and have not looked at what is the minimal requirement.
-
-    CREDENTIALS FOR GIT
-
-    Please refer to https://git-scm.com/book/en/v2/Git-Tools-Credential-Storage
-    for more info. The approach we used is the following:
-
-    - use the 'store' mode by running:
-      `git config --global credential.helper 'store --file ~/.git-credentials'`
-    - update your `~/.git-credentials` with:
-      ```
-      https://username:access_token@your.gitlab-server.com
-      ```
-
-    CREDENTIALS FOR GITLAB API
-
-    Credentials must be written in the `secrets/gitlab-python.cfg`, which has
-    been added to the `.gitignore` file (so it is excluded from the repo).
-    Please refer to
-    https://python-gitlab.readthedocs.io/en/stable/cli.html#content , which
-    details the content needed in this file.
+    All instructions can be found in ``gitlab-access-setup.txt``
     """
     # Initialise variables
-    gl = gitlab.Gitlab.from_config(config_files=["secrets/gitlab-python.cfg"])
+    local_gitlab_python_config = "secrets/gitlab-python.cfg"
+    if os.path.isfile(local_gitlab_python_config):
+        gl = gitlab.Gitlab.from_config(config_files=[local_gitlab_python_config])
+    else:
+        try:
+            gl = gitlab.Gitlab.from_config()
+        except gitlab.config.GitlabConfigMissingError:
+            raise_config_exception_gitlab()
     project_name_prefix = "autorelease-test-repo-"
     project_name = f"{project_name_prefix}{datetime.date.today()}"
     # Look for project if exists and delete old/deprecated ones
@@ -122,7 +102,25 @@ def setup_gitlab_project(context):
     # Make project available in context
     context.gitlab_project = target_project
 
+
+def raise_config_exception_git():
+    _raise_config_exception("GIT credentials not setup/configured.")
+
+
+def raise_config_exception_gitlab():
+    _raise_config_exception("GITLAB credentials not setup/configured.")
+
+
+class AutoreleaseConfigMissingError(Exception):
+    pass
+
+
+def _raise_config_exception(message):
+    with open('gitlab-access-setup.txt', 'r') as f:
+        raise AutoreleaseConfigMissingError(f"\n\n##### {message} #####\n\n"
+                                            f"READ INSTRUCTIONS BELOW\n\n{f.read()}")
+
+
 def delete_all_opened_gitlab_project_mergerequests(context):
     for mr in context.gitlab_project.mergerequests.list(state="opened"):
         mr.delete()
-
