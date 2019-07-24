@@ -7,6 +7,7 @@ from git import Repo
 from git.exc import GitCommandError
 from hamcrest import *
 from environment import raise_config_exception_git
+import logging
 
 
 # -----------------------------------------------------------------------------
@@ -24,26 +25,23 @@ def step_wait_for_pipeline_success(context):
 # -----------------------------------------------------------------------------
 @given('a starting repo at version "{version}", with a staged file and a changelog file with')
 def step_starting_repo_with_specific_change_log(context, version):
-    repo = context.repo = Repo.init(posixpath_normpath(context.workdir))
+    # repo = context.repo = Repo.init(posixpath_normpath(context.workdir))
+    repo = _clone_repo_and_check_git_config(context)
+
+    _initialise_repo_content_if_empty(context)
+
+    repo.create_head(f"master{context.scenario_branches_suffix}").checkout()
 
     command_steps.step_a_file_named_filename_with(context, "ChangeLog.rst")
 
     repo.git.add("--all")
-    repo.git.commit(m="pipo bingo")
+    repo.git.commit(m=f"Base commit for {context.scenario_branches_suffix[1:]}")
 
     repo.create_tag("0.0.1")
 
-    print("context.gitlab_project.http_url_to_repo")
-    print(context.gitlab_project.http_url_to_repo)
-    origin = repo.create_remote('origin', context.gitlab_project.http_url_to_repo)
-    try:
-        origin.push(repo.head.ref, force=True)
-    except GitCommandError as e:
-        if e.status == 128:
-            raise_config_exception_git()
-        else:
-            raise e
-
+    repo.git.push("--set-upstream",
+                  context.repo.remotes.origin,
+                  context.repo.head.ref)
     # Make sure test branch is unprotected in GitLab, which protects first pushed
     # branches
     context.gitlab_project.branches.get(repo.head.ref.name).unprotect()
@@ -86,6 +84,32 @@ release:
     repo.git.add("--all")
 
 
+def _clone_repo_and_check_git_config(context):
+    try:
+        repo = context.repo = Repo.clone_from(context.http_url_to_repo, posixpath_normpath(context.workdir))
+    except GitCommandError as e:
+        if e.status == 128:
+            raise_config_exception_git()
+        else:
+            raise e
+    return repo
+
+
+def _initialise_repo_content_if_empty(context):
+    try:
+        context.repo.head.commit
+    except ValueError as e:
+        if "does not exist" in e.args[0]:
+            context.surrogate_text = "Lorem ipsum"
+            command_steps.step_a_file_named_filename_with(context, "lorem_ipsum")
+            context.surrogate_text = None
+            context.repo.git.add("--all")
+            context.repo.git.commit(m="Initial commit")
+            context.repo.git.push()
+        else:
+            raise e
+
+
 @given('a starting repo at version "{version}", with a staged file and a changelog file')
 def step_starting_repo(context, version):
     context.surrogate_text = """
@@ -100,13 +124,15 @@ New
 
 
 @given('a repo branch named "{branch_name}"')
-def step_set_current_branch(context, branch_name):
+def step_create_branch(context, branch_name):
+    branch_name = _append_suffix_to_branch(context, branch_name)
     context.repo.create_head(branch_name)
 
 
 @given('the repo branch "{branch_name}" is checked out')
 @when('I checkout the "{branch_name}" branch')
-def step_set_current_branch(context, branch_name):
+def step_checkout_branch(context, branch_name):
+    branch_name = _append_suffix_to_branch(context, branch_name)
     context.repo.heads[branch_name].checkout()
 
 
@@ -129,19 +155,25 @@ def step_push_repo(context):
     # context.repo.remotes.origin.push(force=True)
     context.repo.git.push("--set-upstream",
                           context.repo.remotes.origin,
-                          context.repo.head.ref,
-                          force=True)
+                          context.repo.head.ref)
+    # force=True)
 
 
 @given('a merge request from "{source_branch_name}" to "{target_branch_name}"')
 def step_create_pr(context, source_branch_name, target_branch_name):
+    source_branch_name = _append_suffix_to_branch(context, source_branch_name)
+    target_branch_name = _append_suffix_to_branch(context, target_branch_name)
     context.gitlab_project_mergerequest = context.gitlab_project.mergerequests.create(
         {
             'source_branch': source_branch_name,
             'target_branch': target_branch_name,
-            'title': f'Created by `behave` for automated BDD testing @ {datetime.datetime.now()}'
+            'title': f'Created by `behave` for automated BDD testing on {context.scenario_branches_suffix[1:]}'
         }
     )
+
+
+def _append_suffix_to_branch(context, branch_name):
+    return f"{branch_name}{context.scenario_branches_suffix}"
 
 
 # -----------------------------------------------------------------------------
@@ -198,7 +230,7 @@ def step_repo_head_should_be_branch(context, branch_name):
 
 @then('the repo has for remote repo the GitLab project (autorelease-test-repo-[TODAY])')
 def step_gitlab_repo_exists(context):
-    assert_that(context.gitlab_project.http_url_to_repo, equal_to(next(context.repo.remotes.origin.urls)))
+    assert_that(context.http_url_to_repo, equal_to(next(context.repo.remotes.origin.urls)))
 
 
 @then('the repo should have "{num_of_commits:int}" commit')

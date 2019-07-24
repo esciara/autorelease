@@ -13,6 +13,7 @@ import os
 import six
 import gitlab
 import datetime
+import time
 
 # -- MATCHES ANY TAGS: @use.with_{category}={value}
 # NOTE: active_tag_value_provider provides category values for active tags.
@@ -39,6 +40,8 @@ def before_all(context):
     setup_python_path()
     setup_context_with_global_params_test(context)
     setup_command_shell_processors4behave()
+    # -- SETUP Logging:
+    context.config.setup_logging()
     # -- SETUP GitLab project:
     setup_gitlab_project(context)
 
@@ -52,6 +55,9 @@ def before_scenario(context, scenario):
     if active_tag_matcher.should_exclude_with(scenario.effective_tags):
         scenario.skip(reason=active_tag_matcher.exclude_reason)
     delete_all_opened_gitlab_project_mergerequests(context)
+    # TODO: refactor to use a fixture
+    # -- SETUP prefix for branches
+    context.scenario_branches_suffix = f"_scenario_at_{datetime.datetime.now().strftime('%H_%M_%S_%f')}"
 
 
 # -----------------------------------------------------------------------------
@@ -74,14 +80,7 @@ def setup_gitlab_project(context):
     All instructions can be found in ``gitlab-access-setup.txt``
     """
     # Initialise variables
-    local_gitlab_python_config = "secrets/gitlab-python.cfg"
-    if os.path.isfile(local_gitlab_python_config):
-        gl = gitlab.Gitlab.from_config(config_files=[local_gitlab_python_config])
-    else:
-        try:
-            gl = gitlab.Gitlab.from_config()
-        except gitlab.config.GitlabConfigMissingError:
-            raise_config_exception_gitlab()
+    gl = _gitlab_client_from_config()
     project_name_prefix = "autorelease-test-repo-"
     project_name = f"{project_name_prefix}{datetime.date.today()}"
     # Look for project if exists and delete old/deprecated ones
@@ -95,12 +94,32 @@ def setup_gitlab_project(context):
                 project.delete()
     # Create new project if none found
     if target_project is None:
+        # In case the num of projects is limited to 2 per user (this what I found
+        # in a company), wait until projects are effectively deleted
+        while len(gl.projects.list(owned=True, search=project_name_prefix)) > 0:
+            time.sleep(1.)
         target_project = gl.projects.create({"name": project_name})
     # Unprotect all protected branches
     for branch in target_project.protectedbranches.list():
         target_project.branches.get(branch.name).unprotect()
     # Make project available in context
     context.gitlab_project = target_project
+    # Handle special case where gitlab is run on local host using docker-compose and
+    # https://github.com/jeshan/gitlab-on-compose
+    context.http_url_to_repo = context.gitlab_project.http_url_to_repo.replace("http://gitlab/",
+                                                                               "http://localhost:1000/")
+
+
+def _gitlab_client_from_config():
+    local_gitlab_python_config = "secrets/gitlab-python.cfg"
+    if os.path.isfile(local_gitlab_python_config):
+        gl = gitlab.Gitlab.from_config(config_files=[local_gitlab_python_config])
+    else:
+        try:
+            gl = gitlab.Gitlab.from_config()
+        except gitlab.config.GitlabConfigMissingError:
+            raise_config_exception_gitlab()
+    return gl
 
 
 def raise_config_exception_git():

@@ -134,8 +134,12 @@ def step_a_file_named_filename_and_encoding_with(context, filename, encoding):
     """Creates a textual file with the content provided as docstring."""
     __encoding_is_valid = True
     text_to_use = context.text
+    # TODO refactor this try/except
     try:
-        text_to_use = context.surrogate_text
+        if context.surrogate_text is not None:
+            text_to_use = context.surrogate_text
+        else:
+            assert context.text is not None, "ENSURE: multiline text is provided."
     except AttributeError:
         assert context.text is not None, "ENSURE: multiline text is provided."
     assert not os.path.isabs(filename)

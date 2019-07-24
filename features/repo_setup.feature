@@ -49,7 +49,6 @@ Feature: Shared steps for repo setup
           - tags
       """
     And a file named "staged_file" should exist
-    And the repo should have "1" commit
     And the repo head commit should contain the files:
       | filename       |
       | ChangeLog.rst  |
@@ -108,7 +107,6 @@ Feature: Shared steps for repo setup
           - tags
       """
     And a file named "staged_file" should exist
-    And the repo should have "1" commit
     And the repo head commit should contain the files:
       | filename       |
       | ChangeLog.rst  |
