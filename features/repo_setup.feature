@@ -48,6 +48,18 @@ Feature: Shared steps for repo setup
         only:
           - tags
       """
+    And a file named "version.py" should exist
+    And the file "version.py" should contain:
+      """
+      __version__ = "0.0.1"
+      """
+    And a file named "setup.cfg" should exist
+    And the file "setup.cfg" should contain:
+      """[semantic_release]
+      upload_to_pypi=False
+      version_variable = version.py:__version__
+      """
+
     And a file named "staged_file" should exist
     And the repo should have "1" commit
     And the repo head commit should contain the files:

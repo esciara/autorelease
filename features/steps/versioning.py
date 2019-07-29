@@ -88,6 +88,16 @@ release:
     context.surrogate_text = "Lorem ipsum"
     command_steps.step_a_file_named_filename_with(context, "staged_file")
 
+    context.surrogate_text = '__version__ = "0.0.1"'
+    command_steps.step_a_file_named_filename_with(context, "version.py")
+
+    context.surrogate_text = """
+[semantic_release]
+upload_to_pypi=False
+version_variable = version.py:__version__
+    """
+    command_steps.step_a_file_named_filename_with(context, "setup.cfg")
+
     repo.git.add("--all")
 
 
