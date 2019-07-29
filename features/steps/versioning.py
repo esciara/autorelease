@@ -195,7 +195,7 @@ def step_generate_change_log(context):
     # cli.changelog()
     # subprocess.call("gitchangelog > Changelog.rst")
     # todo fix gitchangelog() api call
-    os.chdir(os.path.join(os.getcwd(), '__WORKDIR__'))
+    # os.chdir(os.path.join(os.getcwd(), '__WORKDIR__'))
     os.system("gitchangelog > Changelog.rst")
     # raise NotImplementedError('STEP: When I generate the change log')
 
