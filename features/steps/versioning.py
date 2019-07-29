@@ -1,3 +1,5 @@
+import os
+
 from behave import given, when, then, step
 from behave4cmd0 import command_steps
 from behave4cmd0 import textutil
@@ -23,106 +25,6 @@ def step_wait_for_pipeline_success(context):
 # STEPS: Git related steps
 # TYPE: @given
 # -----------------------------------------------------------------------------
-@given('a starting repo at version "{version}", with a staged file and a changelog file with')
-def step_starting_repo_with_specific_change_log(context, version):
-    # repo = context.repo = Repo.init(posixpath_normpath(context.workdir))
-    repo = _clone_repo_and_check_git_config(context)
-
-    _initialise_repo_content_if_empty(context)
-
-    repo.create_head(f"master{context.scenario_branches_suffix}").checkout()
-
-    command_steps.step_a_file_named_filename_with(context, "ChangeLog.rst")
-
-    repo.git.add("--all")
-    repo.git.commit(m=f"Base commit for {context.scenario_branches_suffix[1:]}")
-
-    repo.create_tag("0.0.1")
-
-    repo.git.push("--set-upstream",
-                  context.repo.remotes.origin,
-                  context.repo.head.ref)
-    # Make sure test branch is unprotected in GitLab, which protects first pushed
-    # branches
-    context.gitlab_project.branches.get(repo.head.ref.name).unprotect()
-
-    context.surrogate_text = """
-stages:
-  - test
-  - versioning
-  - release
-  
-test:
-  image: alpine:latest
-  stage: test
-  script:
-    - echo "Simulate test passing"
-  only:
-    - merge_requests
-  
-versioning:
-  image: python:3.6
-  stage: versioning
-  script:
-    - echo "Simulate versioning stage successful"
-  only:
-    - master
-
-release:
-  image: python:3.6
-  stage: release
-  script:
-    - echo "Simulate release stage successful"
-  only:
-    - tags
-"""
-    command_steps.step_a_file_named_filename_with(context, ".gitlab-ci.yml")
-
-    context.surrogate_text = "Lorem ipsum"
-    command_steps.step_a_file_named_filename_with(context, "staged_file")
-
-    repo.git.add("--all")
-
-
-def _clone_repo_and_check_git_config(context):
-    try:
-        repo = context.repo = Repo.clone_from(context.http_url_to_repo, posixpath_normpath(context.workdir))
-    except GitCommandError as e:
-        if e.status == 128:
-            raise_config_exception_git()
-        else:
-            raise e
-    return repo
-
-
-def _initialise_repo_content_if_empty(context):
-    try:
-        context.repo.head.commit
-    except ValueError as e:
-        if "does not exist" in e.args[0]:
-            context.surrogate_text = "Lorem ipsum"
-            command_steps.step_a_file_named_filename_with(context, "lorem_ipsum")
-            context.surrogate_text = None
-            context.repo.git.add("--all")
-            context.repo.git.commit(m="Initial commit")
-            context.repo.git.push()
-        else:
-            raise e
-
-
-@given('a starting repo at version "{version}", with a staged file and a changelog file')
-def step_starting_repo(context, version):
-    context.surrogate_text = """
-0.0.1 (2019-06-12)
-------------------
-
-New
-~~~
-- something new. [Geronimo]
-"""
-    step_starting_repo_with_specific_change_log(context, version)
-
-
 @given('a repo branch named "{branch_name}"')
 def step_create_branch(context, branch_name):
     branch_name = _append_suffix_to_branch(context, branch_name)
@@ -136,11 +38,23 @@ def step_checkout_branch(context, branch_name):
     context.repo.heads[branch_name].checkout()
 
 
+@given('the file "{filename}" is added to the repo index')
+def step_add_file_to_index(context, filename):
+    context.repo.index.add([filename])
+
+
 @given('the repo index is committed with message:')
 @given('the repo index is committed with message')
 def step_commit_with_message(context):
     assert context.text is not None, "REQUIRE: multiline text"
     context.repo.index.commit(context.text)
+
+
+@given('the file "{filename}" is added and committed to the repo with commit message:')
+@given('the file "{filename}" is added and committed to the repo with commit message')
+def step_add_file_and_commit_with_message(context, filename):
+    step_add_file_to_index(context, filename)
+    step_commit_with_message(context)
 
 
 @given('the repo is pushed')
@@ -234,7 +148,8 @@ def step_gitlab_repo_exists(context):
 
 
 @then('the repo should have "{num_of_commits:int}" commit')
-def step_impl(context, num_of_commits):
+@then('the repo should have "{num_of_commits:int}" commits')
+def step_repo_should_have_num_commits(context, num_of_commits):
     assert_that(list(context.repo.iter_commits()), has_length(num_of_commits))
 
 

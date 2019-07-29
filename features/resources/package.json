@@ -1,0 +1,14 @@
+{
+  "name": "autorelease_behave_support_packages",
+  "version": "1.0.0",
+  "description": "Only created for behave bdd tests on autorelease",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "standard-version": "^6.0.1"
+  }
+}

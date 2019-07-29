@@ -6,6 +6,7 @@
 #
 
 from behave.tag_matcher import ActiveTagMatcher, setup_active_tag_values
+from behave4cmd0 import command_shell
 from behave4cmd0.setup_command_shell import setup_command_shell_processors4behave
 import platform
 import sys
@@ -42,6 +43,10 @@ def before_all(context):
     setup_command_shell_processors4behave()
     # -- SETUP Logging:
     context.config.setup_logging()
+    # -- SETUP Verify NodeJS is installed
+    command_result = command_shell.run("npm --version")
+    if command_result.returncode != 0:
+        raise AutoreleaseBddRunSetupError("NodeJS must be installed before running `behave` on this project.")
     # -- SETUP GitLab project:
     setup_gitlab_project(context)
 
@@ -130,14 +135,18 @@ def raise_config_exception_gitlab():
     _raise_config_exception("GITLAB credentials not setup/configured.")
 
 
-class AutoreleaseConfigMissingError(Exception):
+class AutoreleaseBddRunSetupError(Exception):
+    pass
+
+
+class AutoreleaseBddRunConfigMissingError(AutoreleaseBddRunSetupError):
     pass
 
 
 def _raise_config_exception(message):
     with open('gitlab-access-setup.txt', 'r') as f:
-        raise AutoreleaseConfigMissingError(f"\n\n##### {message} #####\n\n"
-                                            f"READ INSTRUCTIONS BELOW\n\n{f.read()}")
+        raise AutoreleaseBddRunConfigMissingError(f"\n\n##### {message} #####\n\n"
+                                                  f"READ INSTRUCTIONS BELOW\n\n{f.read()}")
 
 
 def delete_all_opened_gitlab_project_mergerequests(context):
