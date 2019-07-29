@@ -36,7 +36,7 @@ def step_starting_repo_with_specific_change_log(context, version):
     repo.git.add("--all")
     repo.git.commit(m="pipo bingo")
 
-    repo.create_tag("0.0.1")
+    repo.create_tag("v0.0.1")
 
     print("context.gitlab_project.http_url_to_repo")
     print(context.gitlab_project.http_url_to_repo)
@@ -104,7 +104,7 @@ version_variable = version.py:__version__
 @given('a starting repo at version "{version}", with a staged file and a changelog file')
 def step_starting_repo(context, version):
     context.surrogate_text = """
-0.0.1 (2019-06-12)
+v0.0.1 (2019-06-12)
 ------------------
 
 New
@@ -171,7 +171,12 @@ def step_commit_st_file(context):
 @when('I bump the version')
 def step_bump_version(context):
     # raise NotImplementedError('STEP: When I bump the version')
-    cli.version(force_level=None, noop=False)
+
+    # todo fix semantic-release version api call
+    os.chdir(os.path.join(os.getcwd(), '__WORKDIR__'))
+    os.system("semantic-release version")
+
+    # cli.version(force_level=None, noop=False)
 
 
 @when('the git label "{version}" should be on the last commit')
