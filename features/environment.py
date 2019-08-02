@@ -6,7 +6,8 @@
 #
 
 from behave.tag_matcher import ActiveTagMatcher, setup_active_tag_values
-from behave4cmd0 import command_shell
+
+from behave4cmd0 import command_shell, command_util
 from behave4cmd0.setup_command_shell import setup_command_shell_processors4behave
 import platform
 import sys
@@ -62,7 +63,9 @@ def before_scenario(context, scenario):
     delete_all_opened_gitlab_project_mergerequests(context)
     # TODO: refactor to use a fixture
     # -- SETUP prefix for branches
-    context.scenario_branches_suffix = f"_scenario_at_{datetime.datetime.now().strftime('%H_%M_%S_%f')}"
+    command_util.ensure_context_attribute_exists(context,
+                                                 "scenario_branches_suffix",
+                                                 f"_scenario_at_{datetime.datetime.now().strftime('%H_%M_%S_%f')}")
 
 
 # -----------------------------------------------------------------------------
@@ -108,11 +111,13 @@ def setup_gitlab_project(context):
     for branch in target_project.protectedbranches.list():
         target_project.branches.get(branch.name).unprotect()
     # Make project available in context
-    context.gitlab_project = target_project
+    command_util.ensure_context_attribute_exists(context, "gitlab_project", target_project)
     # Handle special case where gitlab is run on local host using docker-compose and
     # https://github.com/jeshan/gitlab-on-compose
-    context.http_url_to_repo = context.gitlab_project.http_url_to_repo.replace("http://gitlab/",
-                                                                               "http://localhost:1000/")
+    command_util.ensure_context_attribute_exists(context,
+                                                 "http_url_to_repo",
+                                                 context.gitlab_project.http_url_to_repo.replace("http://gitlab/",
+                                                                                                 "http://localhost:1000/"))
 
 
 def _gitlab_client_from_config():

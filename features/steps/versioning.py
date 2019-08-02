@@ -43,6 +43,11 @@ def step_add_file_to_index(context, filename):
     context.repo.index.add([filename])
 
 
+@given('all files are added to the repo index')
+def step_add_all_files_to_index(context, ):
+    context.repo.git.add("--all")
+
+
 @given('the repo index is committed with message:')
 @given('the repo index is committed with message')
 def step_commit_with_message(context):
@@ -55,6 +60,11 @@ def step_commit_with_message(context):
 def step_add_file_and_commit_with_message(context, filename):
     step_add_file_to_index(context, filename)
     step_commit_with_message(context)
+
+
+@step('a repo tag "{tag_name}" on the repo head')
+def step_create_tag(context, tag_name):
+    context.repo.create_tag(tag_name)
 
 
 @given('the repo is pushed')
@@ -199,14 +209,14 @@ def _files_in_index(context, filenames):
     assert_that([item.a_path for item in context.repo.index.diff("HEAD")], has_items(*filenames))
 
 
+@then('the file "{filename}" should contain (templated):')
 @then('the file "{filename}" should contain (templated)')
 def step_file_should_contain_multiline_text_templated(context, filename):
     assert context.text is not None, "REQUIRE: multiline text"
     expected_text = context.text
-    if "{__TODAY__}" in context.text or "{__GIT_COMMITER__}" in context.text:
+    if "{__TODAY__}" in context.text:
         expected_text = textutil.template_substitute(context.text,
-                                                     __TODAY__=datetime.date.today(),
-                                                     __GIT_COMMITER__="TO DO"
+                                                     __TODAY__=f"{datetime.date.today()}",
                                                      )
     command_steps.step_file_should_contain_text(context, filename, expected_text)
 

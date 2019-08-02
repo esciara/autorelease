@@ -40,6 +40,14 @@ six = ">=1.9.0"
 webencodings = "*"
 
 [[package]]
+category = "dev"
+description = "Version-bump your software with a single command!"
+name = "bump2version"
+optional = false
+python-versions = "*"
+version = "0.5.10"
+
+[[package]]
 category = "main"
 description = "Python package for providing Mozilla's CA Bundle."
 name = "certifi"
@@ -226,7 +234,7 @@ version = "2.4.2"
 category = "main"
 description = "Hamcrest framework for matcher objects"
 name = "pyhamcrest"
-optional = false
+optional = true
 python-versions = "*"
 version = "1.9.0"
 
@@ -453,7 +461,7 @@ python-versions = ">=2.7"
 version = "0.5.2"
 
 [metadata]
-content-hash = "d7f1efd159ad90561caa5989c0ac23c7b9ff85e74ab9cc56d9e1d984c744585b"
+content-hash = "8c0fc8a4d21b8240d26d07215d7e84a980d2427f16e31e8207e32b410490c443"
 python-versions = "~3.6"  # Compatible python versions must be declared here
 
 [metadata.hashes]
@@ -461,6 +469,7 @@ atomicwrites = ["03472c30eb2c5d1ba9227e4c2ca66ab8287fbfbbda3888aa93dc2e28fc6811b
 attrs = ["69c0dbf2ed392de1cb5ec704444b08a5ef81680a61cb899dc08127123af36a79", "f0b870f674851ecbfbbbd364d6b5cbdff9dcedbc7f3f5e18a6891057f21fe399"]
 behave = ["b9662327aa53294c1351b0a9c369093ccec1d21026f050c3bd9b3e5cccf81a86", "ebda1a6c9e5bfe95c5f9f0a2794e01c7098b3dde86c10a95d8621c5907ff6f1c"]
 bleach = ["213336e49e102af26d9cde77dd2d0397afabc5a6bf2fed985dc35b5d1e285a16", "3fdf7f77adcf649c9911387df51254b813185e32b2c6619f690b593a617e19fa"]
+bump2version = ["185abfd0d8321ec5059424d8b670aa82f7385948ff7ddd986981b4ed04dc819a"]
 certifi = ["046832c04d4e752f37383b628bc601a7ea7211496b4638f6514d0e5b9acc4939", "945e3ba63a0b9f577b1395204e13c3a231f9bc0223888be653286534e5873695"]
 chardet = ["84ab92ed1c4d4f16916e05906b6b75a6c0fb5db821cc65e70cbd64a3e2a5eaae", "fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691"]
 click = ["29f99fc6125fbc931b758dc053b3114e55c77a6e4c6c3a2674a2dc986016381d", "f15516df478d5a56180fbf80e68f206010e6d160fc39fa508b65e035fd75130b"]
