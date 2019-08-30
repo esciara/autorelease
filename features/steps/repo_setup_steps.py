@@ -89,7 +89,7 @@ release:
 
 def _clone_pre_initialised_repo_and_check_git_config(context):
     try:
-        context.repo = Repo.clone_from(context.http_url_to_repo, posixpath_normpath(context.workdir))
+        context.repo = Repo.clone_from(context.gitlab_project.http_url_to_repo, posixpath_normpath(context.workdir))
     except GitCommandError as e:
         if e.status == 128:
             raise_config_exception_git()

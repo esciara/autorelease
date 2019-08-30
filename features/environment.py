@@ -16,6 +16,8 @@ import six
 import gitlab
 import datetime
 import time
+from re import search
+import logging
 
 # -- MATCHES ANY TAGS: @use.with_{category}={value}
 # NOTE: active_tag_value_provider provides category values for active tags.
@@ -30,6 +32,13 @@ active_tag_value_provider = {
     "os": sys.platform,
 }
 active_tag_matcher = ActiveTagMatcher(active_tag_value_provider)
+
+GITLAB_EXTERNAL_URL_INSTRUCTIONS = "\n##### You will need to change GitLab's external_url. " \
+                                   "See https://docs.gitlab.com/omnibus/settings/configuration.html#configuring-the-external-url-for-gitlab" \
+                                   "for more details." \
+                                   "\n##### See https://docs.gitlab.com/omnibus/docker to set it up through " \
+                                   "passed arguments or environment variables when using docker or " \
+                                   "docker-compose."
 
 
 # -----------------------------------------------------------------------------
@@ -85,51 +94,69 @@ def setup_python_path():
 
 def setup_gitlab_project(context):
     """
-    All instructions can be found in ``gitlab-access-setup.txt``
+    All instructions can be found in the ``gitlab-access-setup.txt`` file.
     """
     # Initialise variables
-    gl = _gitlab_client_from_config()
+    gitlab_client = _gitlab_client_from_config()
     project_name_prefix = "autorelease-test-repo-"
     project_name = f"{project_name_prefix}{datetime.date.today()}"
     # Look for project if exists and delete old/deprecated ones
-    projects = gl.projects.list(owned=True, search=project_name_prefix)
-    target_project = None
+    projects = gitlab_client.projects.list(owned=True, search=project_name_prefix)
+    gitlab_project = None
     for project in projects:
         if project_name_prefix in project.name:
             if project.name == project_name:
-                target_project = project
+                gitlab_project = project
             else:
                 project.delete()
     # Create new project if none found
-    if target_project is None:
+    if gitlab_project is None:
         # In case the num of projects is limited to 2 per user (this what I found
         # in a company), wait until projects are effectively deleted
-        while len(gl.projects.list(owned=True, search=project_name_prefix)) > 0:
+        while len(gitlab_client.projects.list(owned=True, search=project_name_prefix)) > 0:
             time.sleep(1.)
-        target_project = gl.projects.create({"name": project_name})
+        gitlab_project = gitlab_client.projects.create({"name": project_name})
     # Unprotect all protected branches
-    for branch in target_project.protectedbranches.list():
-        target_project.branches.get(branch.name).unprotect()
-    # Make project available in context
-    command_util.ensure_context_attribute_exists(context, "gitlab_project", target_project)
-    # Handle special case where gitlab is run on local host using docker-compose and
-    # https://github.com/jeshan/gitlab-on-compose
-    command_util.ensure_context_attribute_exists(context,
-                                                 "http_url_to_repo",
-                                                 context.gitlab_project.http_url_to_repo.replace("http://gitlab/",
-                                                                                                 "http://localhost:1000/"))
+    for branch in gitlab_project.protectedbranches.list():
+        gitlab_project.branches.get(branch.name).unprotect()
+    # Verify GitLab's external_url is the same a
+    if not gitlab_project.http_url_to_repo.startswith(gitlab_client.url):
+        raise AutoreleaseBddRunInconsistentGitlabUrl("\n#####"
+                                                     "\n##### Declared GitLab URL and GitLab's effective 'external_url' "
+                                                     "are different."
+                                                     f"\n##### Your declared GitLab URL is '{gitlab_client.url}'."
+                                                     f"\n##### GitLab's effective 'external_url' is '{gitlab_client.url}'."
+                                                     "\n##### This means that your GitLab instance has not been properly "
+                                                     "set up and can cause these tests not to work. "
+                                                     "Hence it is not allowed."
+                                                     + GITLAB_EXTERNAL_URL_INSTRUCTIONS +
+                                                     "\n#####\n\n")
+    # Make gitlab elements available in context
+    command_util.ensure_context_attribute_exists(context, "gitlab_client", gitlab_client)
+    command_util.ensure_context_attribute_exists(context, "gitlab_project", gitlab_project)
 
 
 def _gitlab_client_from_config():
     local_gitlab_python_config = "secrets/gitlab-python.cfg"
     if os.path.isfile(local_gitlab_python_config):
-        gl = gitlab.Gitlab.from_config(config_files=[local_gitlab_python_config])
+        gitlab_client = gitlab.Gitlab.from_config(config_files=[local_gitlab_python_config])
     else:
         try:
-            gl = gitlab.Gitlab.from_config()
+            gitlab_client = gitlab.Gitlab.from_config()
         except gitlab.config.GitlabConfigMissingError:
             raise_config_exception_gitlab()
-    return gl
+    if bool(search(r"^https?://(127\.0\.0\.1|localhost)(:|/)?", gitlab_client.url)):
+        raise AutoreleaseBddRunUnauthorisedGitlabUrl("\n#####"
+                                                     f"\n##### Your declared GitLab URL is '{gitlab_client.url}'."
+                                                     "\n##### Using '127.0.0.1' or 'localhost' "
+                                                     "in your git remote url might can cause these tests not to work, "
+                                                     "particularly if you are using docker or docker-compose. "
+                                                     "Hence it is not allowed."
+                                                     "\n##### One way to deal with this is to declare a hostname "
+                                                     "locally, for instance on Macs in your '/etc/hosts' file."
+                                                     + GITLAB_EXTERNAL_URL_INSTRUCTIONS +
+                                                     "\n#####\n\n")
+    return gitlab_client
 
 
 def raise_config_exception_git():
@@ -145,6 +172,14 @@ class AutoreleaseBddRunSetupError(Exception):
 
 
 class AutoreleaseBddRunConfigMissingError(AutoreleaseBddRunSetupError):
+    pass
+
+
+class AutoreleaseBddRunUnauthorisedGitlabUrl(AutoreleaseBddRunSetupError):
+    pass
+
+
+class AutoreleaseBddRunInconsistentGitlabUrl(AutoreleaseBddRunSetupError):
     pass
 
 

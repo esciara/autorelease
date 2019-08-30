@@ -154,7 +154,7 @@ def step_repo_head_should_be_branch(context, branch_name):
 
 @then('the repo has for remote repo the GitLab project (autorelease-test-repo-[TODAY])')
 def step_gitlab_repo_exists(context):
-    assert_that(context.http_url_to_repo, equal_to(next(context.repo.remotes.origin.urls)))
+    assert_that(context.gitlab_project.http_url_to_repo, equal_to(next(context.repo.remotes.origin.urls)))
 
 
 @then('the repo should have "{num_of_commits:int}" commit')
