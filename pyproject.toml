@@ -19,17 +19,16 @@ python = "~3.6"  # Compatible python versions must be declared here
 # and creating extras for use in `tox.ini` instead of using [tool.poetry.dev-dependencies]
 #
 # Optional dependencies to be part of `testing` extra
-pytest = { version = "^5.0", optional = true }
+pytest = {version = "^5.0", optional = true}
 # Optional dependencies to be part of `bdd` extra
-behave = { version = "^1.2", optional = true }
-gitpython = { version = "^2.1", optional = true }
-python-gitlab = { version = "^1.9", optional = true }
-PyHamcrest = { version = "^1.9", optional = true }
+behave = {version = "^1.2", optional = true}
+gitpython = {version = "^3.0", optional = true}
+python-gitlab = {version = "^1.10", optional = true}
+PyHamcrest = {version = "^1.9", optional = true}
 
 
 [tool.poetry.dev-dependencies]
 tox = "^3.13"
-python-semantic-release = "^4.1"
 bump2version = "^0.5.10"
 
 
@@ -41,7 +40,7 @@ files = [
 ]
 
 
-[options.extras_require]
+[tool.poetry.extras]
 testing = ["pytest"]
 bdd = ["behave", "gitpython", "python-gitlab", "PyHamcrest"]
 
