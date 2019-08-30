@@ -282,3 +282,6 @@ typings/
 # DynamoDB Local files
 .dynamodb/
 
+
+### Project specific whitelisting patterns
+!/features/resources/node_modules
