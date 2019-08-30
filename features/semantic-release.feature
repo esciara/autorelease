@@ -7,10 +7,12 @@ Feature: Using semantic-release
     Given a new working directory
     And a starting repo with one initial commit containing a file named "lorem_ipsum"
     And the pre-installed NodeJS packages are copied to the working directory
-    And the NodeJS package "semantic-release" is installed
-    And the NodeJS package "@semantic-release/exec" is installed
-    And the NodeJS package "@semantic-release/git" is installed
-    And the NodeJS package "@semantic-release/gitlab" is installed
+    And the NodeJS following packages are installed:
+      | package_name             |
+      | semantic-release         |
+      | @semantic-release/exec   |
+      | @semantic-release/git    |
+      | @semantic-release/gitlab |
     And a file named "package.json" with:
         """
         {

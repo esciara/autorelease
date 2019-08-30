@@ -3,9 +3,10 @@ from distutils.dir_util import copy_tree
 from behave import given, when, then, step
 
 from behave4cmd0 import command_steps, command_util, pathutil, textutil
-from hamcrest import assert_that, equal_to, contains_string, contains_inanyorder
+from hamcrest import assert_that, equal_to, contains_string, has_items
 
 from steps.versioning import step_add_file_to_index
+import logging
 
 
 # -----------------------------------------------------------------------------
@@ -40,8 +41,28 @@ def step_copy_pre_installed_nodejs_packages(context):
 def step_nodejs_package_installed(context, package_name):
     command_steps.step_i_run_command(context, "npm list --depth=0")
     # TODO add the NodeJS pre-installed packages directory in the failure message
-    assert_that(context.command_result.output, contains_string(package_name),
+    assert_that(context.command_result.output, contains_string(_nodejs_package_name_output_format(package_name)),
                 f"NodeJS pre-installed packages must contain the `{package_name}` package.")
+
+
+@given('the NodeJS following packages are installed')
+@given('the NodeJS following packages are installed:')
+def step_nodejs_packages_installed(context):
+    assert context.table is not None, "REQUIRE: table"
+    assert "package_name" in context.table.headings, "REQUIRE: a 'package_name' column"
+    command_steps.step_i_run_command(context, "npm list --depth=0")
+    expected_package_names = [row["package_name"] for row in context.table]
+    formatted_package_names = [_nodejs_package_name_output_format(package_name) for package_name in
+                               expected_package_names]
+    is_formatted_package_names_in_output = [package_name in context.command_result.output
+                                            for package_name in formatted_package_names]
+    package_names_in_output = [a for a, b in zip(expected_package_names, is_formatted_package_names_in_output) if b]
+    assert_that(package_names_in_output, has_items(*expected_package_names),
+                f"NodeJS pre-installed packages must contain the packages {expected_package_names}.")
+
+
+def _nodejs_package_name_output_format(package_name):
+    return "─ " + package_name + "@"
 
 
 # -----------------------------------------------------------------------------
@@ -60,11 +81,12 @@ def step_i_run_local_nodejs_built_command(context, command):
     # new_command = os.path.join("node_modules", ".bin", command)
     command_steps.step_i_run_command(context, new_command)
 
+
 @when('I run semantic-release on current branch and with args "{args}"')
 def step_i_run_semantic_release_current_branch_args(context, args):
     command = f"semantic-release --branch {context.repo.head.ref.name} {args}"
     if " --repository-url " not in args and " -r " not in args:
         command = f"{command} --repository-url {next(context.repo.remotes.origin.urls)}"
     if " --gitlab-url " not in args:
-        command = f"{command} --gitlab-url http://localhost:1000"
+        command = f"{command} --gitlab-url {context.gitlab_client.url}"
     step_i_run_local_nodejs_built_command(context, command)
