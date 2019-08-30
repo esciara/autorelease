@@ -3,9 +3,10 @@ from distutils.dir_util import copy_tree
 from behave import given, when, then, step
 
 from behave4cmd0 import command_steps, command_util, pathutil, textutil
-from hamcrest import assert_that, equal_to, contains_string, has_items
+from hamcrest import assert_that, contains_string, any_of, contains_inanyorder, matches_regexp
 
 from steps.versioning import step_add_file_to_index
+from re import search
 import logging
 
 
@@ -41,7 +42,8 @@ def step_copy_pre_installed_nodejs_packages(context):
 def step_nodejs_package_installed(context, package_name):
     command_steps.step_i_run_command(context, "npm list --depth=0")
     # TODO add the NodeJS pre-installed packages directory in the failure message
-    assert_that(context.command_result.output, contains_string(_nodejs_package_name_output_format(package_name)),
+    formatted_package_names = _nodejs_package_name_output_regex(package_name)
+    assert_that(context.command_result.output, matches_regexp(_nodejs_package_name_output_regex(package_name)),
                 f"NodeJS pre-installed packages must contain the `{package_name}` package.")
 
 
@@ -51,18 +53,19 @@ def step_nodejs_packages_installed(context):
     assert context.table is not None, "REQUIRE: table"
     assert "package_name" in context.table.headings, "REQUIRE: a 'package_name' column"
     command_steps.step_i_run_command(context, "npm list --depth=0")
+    # command_steps.step_it_should_pass(context)
     expected_package_names = [row["package_name"] for row in context.table]
-    formatted_package_names = [_nodejs_package_name_output_format(package_name) for package_name in
+    package_names_regex = [_nodejs_package_name_output_regex(package_name) for package_name in
                                expected_package_names]
-    is_formatted_package_names_in_output = [package_name in context.command_result.output
-                                            for package_name in formatted_package_names]
+    is_formatted_package_names_in_output = [bool(search(regex, context.command_result.output))
+                                            for regex in package_names_regex]
     package_names_in_output = [a for a, b in zip(expected_package_names, is_formatted_package_names_in_output) if b]
-    assert_that(package_names_in_output, has_items(*expected_package_names),
-                f"NodeJS pre-installed packages must contain the packages {expected_package_names}.")
+    assert_that(package_names_in_output, contains_inanyorder(*expected_package_names),
+                f"NodeJS pre-installed packages must contain the given packages.")
 
 
-def _nodejs_package_name_output_format(package_name):
-    return "─ " + package_name + "@"
+def _nodejs_package_name_output_regex(package_name):
+    return r"(─|--) " + package_name + "@"
 
 
 # -----------------------------------------------------------------------------
