@@ -17,7 +17,7 @@ def step_merge_pr(context):
 # STEPS: GitLab related steps
 # TYPE: @then
 # -----------------------------------------------------------------------------
-from steps.versioning import _append_suffix_to_branch
+from steps.git_steps import _append_suffix_to_branch
 
 
 @then('gitlab should have a release with tag name "{tag_name}"')

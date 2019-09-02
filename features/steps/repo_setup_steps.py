@@ -4,7 +4,7 @@ from behave4cmd0.pathutil import posixpath_normpath
 from git import Repo
 from git.exc import GitCommandError
 from environment import raise_config_exception_git
-from steps.versioning import step_repo_should_have_num_commits, step_head_commit_should_contain_file
+from steps.git_steps import step_repo_should_have_num_commits, step_head_commit_should_contain_file
 
 
 @given('a starting repo with one initial commit containing a lorem_ipsum file')

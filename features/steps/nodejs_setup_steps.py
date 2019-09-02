@@ -5,7 +5,7 @@ from behave import given, when, then, step
 from behave4cmd0 import command_steps, command_util, pathutil, textutil
 from hamcrest import assert_that, contains_string, any_of, contains_inanyorder, matches_regexp
 
-from steps.versioning import step_add_file_to_index
+from steps.git_steps import step_add_file_to_index
 from re import search
 import logging
 
