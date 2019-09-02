@@ -5,7 +5,7 @@ Feature: Using semantic-release
 
   Background:
     Given a new working directory
-    And a starting repo with one initial commit containing a file named "lorem_ipsum"
+    And a starting repo with one initial commit containing a lorem_ipsum file
     And the pre-installed NodeJS packages are copied to the working directory
     And the NodeJS following packages are installed:
       | package_name                |
@@ -18,7 +18,7 @@ Feature: Using semantic-release
         """
         {
           "name": "autorelease_behave_support_packages",
-          "version": "0.0.1",
+          "version": "v0.0.1",
           "description": "Only created for behave bdd tests on autorelease",
           "main": "no_file.js",
           "author": "",
@@ -89,7 +89,7 @@ Feature: Using semantic-release
 #  Scenario: Bumping version on non NodeJS files
 #    Given a file named "__version__.py" with:
 #        """
-#        version = "0.0.1"
+#        version = "v0.0.1"
 #        """
 #    And a file named ".bumpversion.cfg" with:
 #        """

@@ -1,24 +1,5 @@
-import os
-
 from behave import given, when, then, step
-from behave4cmd0 import command_steps
-from behave4cmd0 import textutil
-from behave4cmd0.pathutil import posixpath_normpath
-import datetime
-from git import Repo
-from git.exc import GitCommandError
 from hamcrest import *
-from environment import raise_config_exception_git
-import logging
-
-
-# -----------------------------------------------------------------------------
-# STEPS: Git related steps
-# TYPE: multiple (@step)
-# -----------------------------------------------------------------------------
-@step('I wait for the CI/CD pipeline to complete successfully')
-def step_wait_for_pipeline_success(context):
-    raise NotImplementedError('STEP: Given I wait for the CI/CD pipeline to complete successfully')
 
 
 # -----------------------------------------------------------------------------
@@ -81,47 +62,6 @@ def step_push_repo(context):
                           context.repo.remotes.origin,
                           context.repo.head.ref)
     # force=True)
-
-
-@given('a merge request from "{source_branch_name}" to "{target_branch_name}"')
-def step_create_pr(context, source_branch_name, target_branch_name):
-    source_branch_name = _append_suffix_to_branch(context, source_branch_name)
-    target_branch_name = _append_suffix_to_branch(context, target_branch_name)
-    context.gitlab_project_mergerequest = context.gitlab_project.mergerequests.create(
-        {
-            'source_branch': source_branch_name,
-            'target_branch': target_branch_name,
-            'title': f'Created by `behave` for automated BDD testing on {context.scenario_branches_suffix[1:]}'
-        }
-    )
-
-
-def _append_suffix_to_branch(context, branch_name):
-    return f"{branch_name}{context.scenario_branches_suffix}"
-
-
-# -----------------------------------------------------------------------------
-# STEPS: Git related steps
-# TYPE: @when
-# -----------------------------------------------------------------------------
-@when('I bump the version')
-def step_bump_version(context):
-    raise NotImplementedError('STEP: When I bump the version')
-
-
-@when('the git label "{version}" should be on the last commit')
-def step_label_should_be_on_last_commit(context, version):
-    raise NotImplementedError('STEP: When I should have a git label "0.0.2" at the last commit')
-
-
-@when('I generate the change log')
-def step_generate_change_log(context):
-    raise NotImplementedError('STEP: When I generate the change log')
-
-
-@when('I merge the merge request')
-def step_merge_pr(context):
-    context.gitlab_project_mergerequest.merge()
 
 
 @step('I pull the repo')
@@ -188,10 +128,6 @@ def step_files_in_head_commit(context):
     _head_commit_should_contain_files(context, [row['filename'] for row in context.table])
 
 
-def _head_commit_should_contain_files(context, filenames):
-    assert_that(list(context.repo.head.commit.stats.files.keys()), has_items(*filenames))
-
-
 @then('the repo index should contain the file "{filename}"')
 def step_index_should_contain_file(context, filename):
     _index_should_contain_files(context, [filename])
@@ -205,38 +141,16 @@ def step_index_should_contain_files(context):
     _index_should_contain_files(context, [row['filename'] for row in context.table])
 
 
+# -----------------------------------------------------------------------------
+# Utility functions
+# -----------------------------------------------------------------------------
+def _append_suffix_to_branch(context, branch_name):
+    return f"{branch_name}{context.scenario_branches_suffix}"
+
+
+def _head_commit_should_contain_files(context, filenames):
+    assert_that(list(context.repo.head.commit.stats.files.keys()), has_items(*filenames))
+
+
 def _index_should_contain_files(context, filenames):
     assert_that([item.a_path for item in context.repo.index.diff("HEAD")], has_items(*filenames))
-
-
-@then('the file "{filename}" should contain (templated):')
-@then('the file "{filename}" should contain (templated)')
-def step_file_should_contain_multiline_text_templated(context, filename):
-    assert context.text is not None, "REQUIRE: multiline text"
-    expected_text = context.text
-    substitutes = ["{__TEST_RUN_START_DATE__}",
-                   "{__GITLAB_PROJECT_URL__}",
-                   "{__COMMIT_HEAD_SHA__}",
-                   "{__COMMIT_HEAD_URL__}",
-                   "{__COMMIT_HEAD_1_SHA__}",
-                   "{__COMMIT_HEAD_1_URL__}",
-                   ]
-    if any(e in context.text for e in substitutes):
-        repo = context.repo
-        gitlab_project_url = context.gitlab_project.web_url
-        commit_url_prefix = gitlab_project_url + "/commit/"
-        commit_head_sha = repo.commit("HEAD").hexsha[:7]
-        commit_head_url = commit_url_prefix + commit_head_sha
-        commit_head_1_sha = repo.commit("HEAD~1").hexsha[:7]
-        commit_head_1_url = commit_url_prefix + commit_head_1_sha
-
-
-        expected_text = textutil.template_substitute(context.text,
-                                                     __TEST_RUN_START_DATE__=f"{context.test_run_start_date}",
-                                                     __GITLAB_PROJECT_URL__=f"{gitlab_project_url}",
-                                                     __COMMIT_HEAD_SHA__=f"{commit_head_sha}",
-                                                     __COMMIT_HEAD_URL__=f"{commit_head_url}",
-                                                     __COMMIT_HEAD_1_SHA__=f"{commit_head_1_sha}",
-                                                     __COMMIT_HEAD_1_URL__=f"{commit_head_1_url}",
-                                                     )
-    command_steps.step_file_should_contain_text(context, filename, expected_text)
