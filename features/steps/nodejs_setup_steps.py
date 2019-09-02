@@ -14,6 +14,14 @@ import logging
 # STEPS: NodeJS related steps
 # TYPE: @given
 # -----------------------------------------------------------------------------
+@given('I set the environment variables for the @semantic-release/gitlab plugin')
+def step_set_env_variables_for_semantic_release_gitlab(context):
+    command_steps.step_I_set_the_environment_variable_to(context, "GITLAB_TOKEN", context.gitlab_client.private_token)
+    command_steps.step_I_set_the_environment_variable_to(context, "GITLAB_URL", context.gitlab_client.url)
+    gitlab_prefix = context.gitlab_client.api_url.replace(context.gitlab_client.url.rstrip("/"), "")
+    command_steps.step_I_set_the_environment_variable_to(context, "GITLAB_PREFIX", gitlab_prefix)
+
+
 @given('the pre-installed NodeJS packages are copied to the working directory')
 def step_copy_pre_installed_nodejs_packages(context):
     resources_path = os.path.join(context.config.base_dir, "resources")
@@ -42,7 +50,6 @@ def step_copy_pre_installed_nodejs_packages(context):
 def step_nodejs_package_installed(context, package_name):
     command_steps.step_i_run_command(context, "npm list --depth=0")
     # TODO add the NodeJS pre-installed packages directory in the failure message
-    formatted_package_names = _nodejs_package_name_output_regex(package_name)
     assert_that(context.command_result.output, matches_regexp(_nodejs_package_name_output_regex(package_name)),
                 f"NodeJS pre-installed packages must contain the `{package_name}` package.")
 
@@ -78,11 +85,9 @@ def step_i_run_local_nodejs_built_command(context, command):
         command = textutil.template_substitute(command,
                                                __TEST_MASTER_BRANCH__=f"master{context.scenario_branches_suffix}",
                                                )
-    print(f"command: {command}")
-    new_command = f"npx {command}"
-    print(f"new_command: {new_command}")
-    # new_command = os.path.join("node_modules", ".bin", command)
-    command_steps.step_i_run_command(context, new_command)
+    npx_command = f"npx {command} --debug"
+    logging.warning(f"npx_command: {npx_command}")
+    command_steps.step_i_run_command(context, npx_command)
 
 
 @when('I run semantic-release on current branch and with args "{args}"')
@@ -90,6 +95,4 @@ def step_i_run_semantic_release_current_branch_args(context, args):
     command = f"semantic-release --branch {context.repo.head.ref.name} {args}"
     if " --repository-url " not in args and " -r " not in args:
         command = f"{command} --repository-url {next(context.repo.remotes.origin.urls)}"
-    if " --gitlab-url " not in args:
-        command = f"{command} --gitlab-url {context.gitlab_client.url}"
     step_i_run_local_nodejs_built_command(context, command)

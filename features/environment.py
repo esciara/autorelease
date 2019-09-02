@@ -99,7 +99,8 @@ def setup_gitlab_project(context):
     # Initialise variables
     gitlab_client = _gitlab_client_from_config()
     project_name_prefix = "autorelease-test-repo-"
-    project_name = f"{project_name_prefix}{datetime.date.today()}"
+    test_run_start_date = datetime.date.today()
+    project_name = f"{project_name_prefix}{test_run_start_date}"
     # Look for project if exists and delete old/deprecated ones
     projects = gitlab_client.projects.list(owned=True, search=project_name_prefix)
     gitlab_project = None
@@ -119,13 +120,14 @@ def setup_gitlab_project(context):
     # Unprotect all protected branches
     for branch in gitlab_project.protectedbranches.list():
         gitlab_project.branches.get(branch.name).unprotect()
-    # Verify GitLab's external_url is the same a
-    if not gitlab_project.http_url_to_repo.startswith(gitlab_client.url):
+    # Verify GitLab's external_url (with which project's URL starts) is the same as our configurated gitlab client url
+    if not gitlab_project.web_url.startswith(gitlab_client.url):
+        external_url = "/".join(gitlab_project.web_url.split("/")[:-2])
         raise AutoreleaseBddRunInconsistentGitlabUrl("\n#####"
                                                      "\n##### Declared GitLab URL and GitLab's effective 'external_url' "
                                                      "are different."
                                                      f"\n##### Your declared GitLab URL is '{gitlab_client.url}'."
-                                                     f"\n##### GitLab's effective 'external_url' is '{gitlab_client.url}'."
+                                                     f"\n##### GitLab's effective 'external_url' is '{external_url}'."
                                                      "\n##### This means that your GitLab instance has not been properly "
                                                      "set up and can cause these tests not to work. "
                                                      "Hence it is not allowed."
@@ -134,6 +136,7 @@ def setup_gitlab_project(context):
     # Make gitlab elements available in context
     command_util.ensure_context_attribute_exists(context, "gitlab_client", gitlab_client)
     command_util.ensure_context_attribute_exists(context, "gitlab_project", gitlab_project)
+    command_util.ensure_context_attribute_exists(context, "test_run_start_date", test_run_start_date)
 
 
 def _gitlab_client_from_config():

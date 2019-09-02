@@ -176,8 +176,8 @@ def step_head_commit_should_be_tagged_with(context, tag_name):
 
 
 @then('the repo head commit should contain the file "{filename}"')
-def step_file_in_head_commit(context, filename):
-    _files_in_head_commit(context, [filename])
+def step_head_commit_should_contain_file(context, filename):
+    _head_commit_should_contain_files(context, [filename])
 
 
 @then('the repo head commit should contain the files:')
@@ -185,27 +185,27 @@ def step_file_in_head_commit(context, filename):
 def step_files_in_head_commit(context):
     assert context.table is not None, "REQUIRE: table"
     assert "filename" in context.table.headings, "REQUIRE: a 'filename' column"
-    _files_in_head_commit(context, [row['filename'] for row in context.table])
+    _head_commit_should_contain_files(context, [row['filename'] for row in context.table])
 
 
-def _files_in_head_commit(context, filenames):
+def _head_commit_should_contain_files(context, filenames):
     assert_that(list(context.repo.head.commit.stats.files.keys()), has_items(*filenames))
 
 
 @then('the repo index should contain the file "{filename}"')
-def step_file_staged(context, filename):
-    _files_in_index(context, [filename])
+def step_index_should_contain_file(context, filename):
+    _index_should_contain_files(context, [filename])
 
 
 @then('the repo index should contain the files:')
 @then('the repo index should contain the files')
-def step_files_in_head_commit(context):
+def step_index_should_contain_files(context):
     assert context.table is not None, "REQUIRE: table"
     assert "filename" in context.table.headings, "REQUIRE: a 'filename' column"
-    _files_in_index(context, [row['filename'] for row in context.table])
+    _index_should_contain_files(context, [row['filename'] for row in context.table])
 
 
-def _files_in_index(context, filenames):
+def _index_should_contain_files(context, filenames):
     assert_that([item.a_path for item in context.repo.index.diff("HEAD")], has_items(*filenames))
 
 
@@ -214,14 +214,29 @@ def _files_in_index(context, filenames):
 def step_file_should_contain_multiline_text_templated(context, filename):
     assert context.text is not None, "REQUIRE: multiline text"
     expected_text = context.text
-    if "{__TODAY__}" in context.text:
+    substitutes = ["{__TEST_RUN_START_DATE__}",
+                   "{__GITLAB_PROJECT_URL__}",
+                   "{__COMMIT_HEAD_SHA__}",
+                   "{__COMMIT_HEAD_URL__}",
+                   "{__COMMIT_HEAD_1_SHA__}",
+                   "{__COMMIT_HEAD_1_URL__}",
+                   ]
+    if any(e in context.text for e in substitutes):
+        repo = context.repo
+        gitlab_project_url = context.gitlab_project.web_url
+        commit_url_prefix = gitlab_project_url + "/commit/"
+        commit_head_sha = repo.commit("HEAD").hexsha[:7]
+        commit_head_url = commit_url_prefix + commit_head_sha
+        commit_head_1_sha = repo.commit("HEAD~1").hexsha[:7]
+        commit_head_1_url = commit_url_prefix + commit_head_1_sha
+
+
         expected_text = textutil.template_substitute(context.text,
-                                                     __TODAY__=f"{datetime.date.today()}",
+                                                     __TEST_RUN_START_DATE__=f"{context.test_run_start_date}",
+                                                     __GITLAB_PROJECT_URL__=f"{gitlab_project_url}",
+                                                     __COMMIT_HEAD_SHA__=f"{commit_head_sha}",
+                                                     __COMMIT_HEAD_URL__=f"{commit_head_url}",
+                                                     __COMMIT_HEAD_1_SHA__=f"{commit_head_1_sha}",
+                                                     __COMMIT_HEAD_1_URL__=f"{commit_head_1_url}",
                                                      )
     command_steps.step_file_should_contain_text(context, filename, expected_text)
-
-
-@then('a new version tag of format "{version_format}" should have been created on the last commit')
-def step_new_version_should_be_on_last_commit(context, version_format):
-    raise NotImplementedError(
-        'STEP: Then a new version tag of format "x.x.x" should have been created on the last commit')

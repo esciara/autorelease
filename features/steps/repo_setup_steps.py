@@ -1,5 +1,5 @@
 from behave import given, when, then, step
-from behave4cmd0 import command_steps
+from behave4cmd0 import command_steps, command_util
 from behave4cmd0 import textutil
 from behave4cmd0.pathutil import posixpath_normpath
 import datetime
@@ -7,29 +7,51 @@ from git import Repo
 from git.exc import GitCommandError
 from hamcrest import *
 from environment import raise_config_exception_git
-from steps.versioning import step_repo_should_have_num_commits, step_file_in_head_commit
+from steps.versioning import step_repo_should_have_num_commits, step_head_commit_should_contain_file
 
 
 @given('a starting repo with one initial commit containing a file named "{filename}"')
 def step_starting_repo_with_specific_change_log(context, filename):
-    repo = _clone_pre_initialised_repo_and_check_git_config(context)
+    _clone_pre_initialised_repo_and_check_git_config(context)
+    repo = context.repo
 
     _initialise_repo_content_if_empty(context)
 
     step_repo_should_have_num_commits(context, 1)
-    step_file_in_head_commit(context, filename)
+    step_head_commit_should_contain_file(context, filename)
+
+    _cleanup_repo_from_previous_test_runs_conflicting_changes(context)
 
     repo.create_head(f"master{context.scenario_branches_suffix}").checkout()
 
     repo.git.push("--set-upstream",
-                  context.repo.remotes.origin,
-                  context.repo.head.ref)
+                  repo.remotes.origin,
+                  repo.head.ref)
+
+
+def _cleanup_repo_from_previous_test_runs_conflicting_changes(context):
+    _cleanup_repo_gitlab_releases(context.gitlab_project)
+    _cleanup_repo_tags(context.repo)
+
+
+def _cleanup_repo_tags(repo):
+    for tag in repo.tags:
+        repo.delete_tag(tag)
+        repo.git.push("--delete",
+                      repo.remotes.origin,
+                      tag)
+
+
+def _cleanup_repo_gitlab_releases(gitlab_project):
+    for release in gitlab_project.releases.list():
+        gitlab_project.releases.delete(release.tag_name)
 
 
 @given('a starting repo at version "{version}", with a staged file and a changelog file with')
 def step_starting_repo_with_specific_change_log(context, version):
     # repo = context.repo = Repo.init(posixpath_normpath(context.workdir))
-    repo = _clone_pre_initialised_repo_and_check_git_config(context)
+    _clone_pre_initialised_repo_and_check_git_config(context)
+    repo = context.repo
 
     _initialise_repo_content_if_empty(context)
 
@@ -89,13 +111,13 @@ release:
 
 def _clone_pre_initialised_repo_and_check_git_config(context):
     try:
-        context.repo = Repo.clone_from(context.gitlab_project.http_url_to_repo, posixpath_normpath(context.workdir))
+        repo = Repo.clone_from(context.gitlab_project.http_url_to_repo, posixpath_normpath(context.workdir))
     except GitCommandError as e:
         if e.status == 128:
             raise_config_exception_git()
         else:
             raise e
-    return context.repo
+    command_util.ensure_context_attribute_exists(context, "repo", repo)
 
 
 def _initialise_repo_content_if_empty(context):

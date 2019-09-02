@@ -8,11 +8,12 @@ Feature: Using semantic-release
     And a starting repo with one initial commit containing a file named "lorem_ipsum"
     And the pre-installed NodeJS packages are copied to the working directory
     And the NodeJS following packages are installed:
-      | package_name             |
-      | semantic-release         |
-      | @semantic-release/exec   |
-      | @semantic-release/git    |
-      | @semantic-release/gitlab |
+      | package_name                |
+      | semantic-release            |
+      | @semantic-release/exec      |
+      | @semantic-release/git       |
+      | @semantic-release/gitlab    |
+      | @semantic-release/changelog |
     And a file named "package.json" with:
         """
         {
@@ -23,6 +24,7 @@ Feature: Using semantic-release
           "author": "",
           "license": "ISC",
           "devDependencies": {
+            "@semantic-release/changelog": "^3.0.4",
             "@semantic-release/exec": "^3.3.5",
             "@semantic-release/git": "^7.0.16",
             "@semantic-release/gitlab": "^3.1.7",
@@ -49,6 +51,7 @@ Feature: Using semantic-release
           "plugins": [
             "@semantic-release/commit-analyzer",
             "@semantic-release/release-notes-generator",
+            "@semantic-release/changelog",
             "@semantic-release/git",
             "@semantic-release/gitlab",
           ],
@@ -62,28 +65,25 @@ Feature: Using semantic-release
         """
         fix: This is a test fix.
         """
+    And I set the environment variables for the @semantic-release/gitlab plugin
     When I run semantic-release on current branch and with args "--no-ci"
-#    When I run the local NodeJS built command "semantic-release --no-ci --branch {__TEST_MASTER_BRANCH__}"
-    Then the command output should contain:
-        """
-        ✖ skip version bump on first release
-        ✔ created CHANGELOG.md
-        ✔ outputting changes to CHANGELOG.md
-        ✔ committing CHANGELOG.md
-        ✔ tagging release v0.0.1
-        """
+    Then it should pass
+    And the repo head commit should be tagged "v0.0.1"
+    And gitlab should have a release with tag name "v0.0.1"
+    And a file named "CHANGELOG.md" should exist
+    And the repo head commit should contain the file "CHANGELOG.md"
     And the file "CHANGELOG.md" should contain (templated):
+#        # Changelog
+#
+#        All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+#
         """
-        # Changelog
-
-        All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
-
-        ### 0.0.1 ({__TODAY__})
+        ## [0.0.1]({__GITLAB_PROJECT_URL__}/compare/v0.0.0...v0.0.1) ({__TEST_RUN_START_DATE__})
 
 
         ### Bug Fixes
 
-        * This is a test fix.
+        * This is a test fix. ([{__COMMIT_HEAD_1_SHA__}]({__COMMIT_HEAD_1_URL__}))
         """
 
 #  Scenario: Bumping version on non NodeJS files
