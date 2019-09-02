@@ -14,7 +14,7 @@ import logging
 # STEPS: NodeJS related steps
 # TYPE: @given
 # -----------------------------------------------------------------------------
-@given('I set the environment variables for the @semantic-release/gitlab plugin')
+@given('I set the GITLAB_TOKEN, GITLAB_URL and GITLAB_PREFIX environment variables for the @semantic-release/gitlab plugin')
 def step_set_env_variables_for_semantic_release_gitlab(context):
     command_steps.step_I_set_the_environment_variable_to(context, "GITLAB_TOKEN", context.gitlab_client.private_token)
     command_steps.step_I_set_the_environment_variable_to(context, "GITLAB_URL", context.gitlab_client.url)

@@ -1,7 +1,7 @@
 Feature: Using semantic-release
   In order to prepare the release of a new version of my project
   As a developer
-  I want to use `standard-version` to generate the changelog and bump the version of my project
+  I want to use `semantic-release` to generate the changelog and bump the version of my project
 
   Background:
     Given a new working directory
@@ -61,11 +61,11 @@ Feature: Using semantic-release
         """
         Lorem ipsum
         """
-    And the file "sample_file" is added and committed to the repo with commit message:
+    And all files are added and committed to the repo with commit message:
         """
         fix: This is a test fix.
         """
-    And I set the environment variables for the @semantic-release/gitlab plugin
+    And I set the GITLAB_TOKEN, GITLAB_URL and GITLAB_PREFIX environment variables for the @semantic-release/gitlab plugin
     When I run semantic-release on current branch and with args "--no-ci"
     Then it should pass
     And the repo head commit should be tagged "v0.0.1"

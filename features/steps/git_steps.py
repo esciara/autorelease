@@ -43,6 +43,13 @@ def step_add_file_and_commit_with_message(context, filename):
     step_commit_with_message(context)
 
 
+@given('all files are added and committed to the repo with commit message:')
+@given('all files are added and committed to the repo with commit message')
+def step_add_all_and_commit_with_message(context):
+    step_add_all_files_to_index(context)
+    step_commit_with_message(context)
+
+
 @step('a repo tag "{tag_name}" on the repo head')
 def step_create_tag(context, tag_name):
     context.repo.create_tag(tag_name)
