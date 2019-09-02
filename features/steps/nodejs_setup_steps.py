@@ -14,7 +14,8 @@ import logging
 # STEPS: NodeJS related steps
 # TYPE: @given
 # -----------------------------------------------------------------------------
-@given('I set the GITLAB_TOKEN, GITLAB_URL and GITLAB_PREFIX environment variables for the @semantic-release/gitlab plugin')
+@given(
+    'I set the GITLAB_TOKEN, GITLAB_URL and GITLAB_PREFIX environment variables for the @semantic-release/gitlab plugin')
 def step_set_env_variables_for_semantic_release_gitlab(context):
     command_steps.step_I_set_the_environment_variable_to(context, "GITLAB_TOKEN", context.gitlab_client.private_token)
     command_steps.step_I_set_the_environment_variable_to(context, "GITLAB_URL", context.gitlab_client.url)
@@ -34,18 +35,6 @@ def step_copy_pre_installed_nodejs_packages(context):
     #            os.path.join(context.workdir, "package-lock.json"))
 
 
-#     command_util.ensure_workdir_exists(context)
-#     filename = ".gitignore"
-#     filepath = os.path.join(context.workdir, filename)
-#     text_to_use = """node_modules/
-# node_modules
-# package.json
-# package-lock.json
-# """
-#     pathutil.create_textfile_with_contents(filepath, text_to_use)
-#     step_add_file_to_index(context, filename)
-
-
 @given('the NodeJS package "{package_name}" is installed')
 def step_nodejs_package_installed(context, package_name):
     command_steps.step_i_run_command(context, "npm list --depth=0")
@@ -63,7 +52,7 @@ def step_nodejs_packages_installed(context):
     # command_steps.step_it_should_pass(context)
     expected_package_names = [row["package_name"] for row in context.table]
     package_names_regex = [_nodejs_package_name_output_regex(package_name) for package_name in
-                               expected_package_names]
+                           expected_package_names]
     is_formatted_package_names_in_output = [bool(search(regex, context.command_result.output))
                                             for regex in package_names_regex]
     package_names_in_output = [a for a, b in zip(expected_package_names, is_formatted_package_names_in_output) if b]

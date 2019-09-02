@@ -86,66 +86,51 @@ Feature: Using semantic-release
         * This is a test fix. ([{__COMMIT_HEAD_1_SHA__}]({__COMMIT_HEAD_1_URL__}))
         """
 
-#  Scenario: Bumping version on non NodeJS files
-#    Given a file named "__version__.py" with:
-#        """
-#        version = "v0.0.1"
-#        """
-#    And a file named ".bumpversion.cfg" with:
-#        """
-#        [bumpversion]
-#        current_version = 0.0.1
-#        commit = False
-#        tag = False
-#
-#        [bumpversion:file:__version__.py]
-#        search = version = "{current_version}"
-#        replace = version = "{new_version}"
-#        """
-#    Given a file named ".releaserc" with:
-#        """
-#        {
-#          "plugins": [
-#            "@semantic-release/commit-analyzer",
-#            "@semantic-release/release-notes-generator",
-#            ["@semantic-release/exec", {
-#              "verifyConditionsCmd": "./verify.sh",
-#              "publishCmd": "./publish.sh ${nextRelease.version} ${options.branch} ${commits.length} ${Date.now()}"
-#            }],
-#            "@semantic-release/git",
-#            "@semantic-release/gitlab",
-#          ]
-#        }
-#        """
-#    And all files are added to the repo index
-#    And the repo index is committed with message:
-#        """
-#        fix: This is a test fix.
-#        """
-##    And the file "sample_file" is added and committed to the repo with commit message:
-##        """
-##        fix: This is a test fix.
-##        """
-#    When I run the local NodeJS built command "standard-version --first-release"
-#    Then it should pass
-##    Then the command output should contain:
-##        """
-##        ✖ skip version bump on first release
-##        ✔ created CHANGELOG.md
-##        ✔ outputting changes to CHANGELOG.md
-##        ✔ committing CHANGELOG.md
-##        ✔ tagging release v0.0.1
-##        """
-#    And the file "CHANGELOG.md" should contain (templated):
-#        """
-#        # Changelog
-#
-#        All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
-#
-#        ### 0.0.1 ({__TODAY__})
-#
-#
-#        ### Bug Fixes
-#
-#        * This is a test fix.
-#        """
+
+  Scenario: Bumping version on non NodeJS files
+    Given a repo tag "v0.0.1" on the repo head
+    And a file named "__version__.py" with:
+        """
+        version = "0.0.1"
+        """
+    And a file named ".bumpversion.cfg" with:
+        """
+        [bumpversion]
+        current_version = 0.0.1
+        commit = False
+        tag = False
+
+        [bumpversion:file:__version__.py]
+        search = version = "{current_version}"
+        replace = version = "{new_version}"
+        """
+    Given a file named ".releaserc" with:
+        """
+        {
+          "plugins": [
+            "@semantic-release/commit-analyzer",
+            "@semantic-release/release-notes-generator",
+            "@semantic-release/changelog",
+            ["@semantic-release/exec", {
+              "verifyConditionsCmd": "bump2version -h",
+              "prepareCmd": "bump2version --current-version ${lastRelease.version} --new-version ${nextRelease.version} minor"
+            }],
+            ["@semantic-release/git", {
+              "assets": [["**", "!.git", "!**/node_modules"]]
+            }],
+            "@semantic-release/gitlab",
+          ]
+        }
+        """
+    And all files are added and committed to the repo with commit message:
+        """
+        fix: This is a test fix.
+        """
+    And I set the GITLAB_TOKEN, GITLAB_URL and GITLAB_PREFIX environment variables for the @semantic-release/gitlab plugin
+    When I run semantic-release on current branch and with args "--no-ci"
+    Then it should pass
+    And the file "__version__.py" should contain:
+        """
+        version = "0.0.2"
+        """
+    And the repo head commit should contain the file "__version__.py"
