@@ -57,15 +57,15 @@ Feature: Using semantic-release
           ],
         }
         """
+    And I set the GITLAB_TOKEN, GITLAB_URL and GITLAB_PREFIX environment variables for the @semantic-release/gitlab plugin
     And a file named "sample_file" with:
         """
         Lorem ipsum
         """
     And all files are added and committed to the repo with commit message:
         """
-        fix: This is a test fix.
+        fix: This is a fix commit for functional tests.
         """
-    And I set the GITLAB_TOKEN, GITLAB_URL and GITLAB_PREFIX environment variables for the @semantic-release/gitlab plugin
     When I run semantic-release on current branch and with args "--no-ci"
     Then it should pass
     And the repo head commit should be tagged "v0.0.1"
@@ -83,7 +83,7 @@ Feature: Using semantic-release
 
         ### Bug Fixes
 
-        * This is a test fix. ([{__COMMIT_HEAD_1_SHA__}]({__COMMIT_HEAD_1_URL__}))
+        * This is a fix commit for functional tests. ([{__COMMIT_HEAD_1_SHA__}]({__COMMIT_HEAD_1_URL__}))
         """
 
 
@@ -124,7 +124,7 @@ Feature: Using semantic-release
         """
     And all files are added and committed to the repo with commit message:
         """
-        fix: This is a test fix.
+        fix: This is a commit for functional tests.
         """
     And I set the GITLAB_TOKEN, GITLAB_URL and GITLAB_PREFIX environment variables for the @semantic-release/gitlab plugin
     When I run semantic-release on current branch and with args "--no-ci"
@@ -134,3 +134,36 @@ Feature: Using semantic-release
         version = "0.0.2"
         """
     And the repo head commit should contain the file "__version__.py"
+
+
+  Scenario: Publish a python package to a pypi server
+    Given there is no package of name "hello_world" and version "0.0.1" on the pypi server
+    And a file named "hello_world.py" with:
+        """
+        if __name__ == '__main__':
+        print("Hello World!")
+        """
+    And a file named "README.md" with:
+        """
+        Lorem ipsum
+        """
+    And a file named "pyproject.toml" with:
+        """
+        [tool.poetry]
+        name = "hello_world"
+        version = "0.0.1"
+        description = "Hello world!"
+        license = "LGPL v2.1"
+        authors = [ "Foo Bar <foo@bar.com>" ]
+        readme = 'README.md'
+        repository = "http://repo"
+        homepage = "https://homepage"
+        keywords = []
+        """
+    And I install the python package through poetry
+    And all files are added and committed to the repo with commit message:
+        """
+        fix: This is a commit for functional tests.
+        """
+    When I run "poetry publish --build -r localpypi"
+    Then it should pass
