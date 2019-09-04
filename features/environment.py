@@ -34,7 +34,7 @@ active_tag_value_provider = {
 active_tag_matcher = ActiveTagMatcher(active_tag_value_provider)
 
 GITLAB_EXTERNAL_URL_INSTRUCTIONS = "\n##### You will need to change GitLab's external_url. " \
-                                   "See https://docs.gitlab.com/omnibus/settings/configuration.html#configuring-the-external-url-for-gitlab" \
+                                   "See https://docs.gitlab.com/omnibus/settings/configuration.html#configuring-the-external-url-for-gitlab " \
                                    "for more details." \
                                    "\n##### See https://docs.gitlab.com/omnibus/docker to set it up through " \
                                    "passed arguments or environment variables when using docker or " \
