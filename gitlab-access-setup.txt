@@ -25,7 +25,7 @@ for more info. We used the following approach:
 $ git config --global credential.helper 'store --file ~/.git-credentials'
 ```
 
-- update your ``~/.git-credentials` with: ``https://YOUR_USERNAME:YOUR_ACCESS_TOKEN@your.gitlab-server.com``
+- update your ``~/.git-credentials`` with: ``https://YOUR_USERNAME:YOUR_ACCESS_TOKEN@your.gitlab-server.com``
 
 
 GIVING CREDENTIALS TO THE PYTHON GITLAB API CLIENT
