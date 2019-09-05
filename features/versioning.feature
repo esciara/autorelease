@@ -38,15 +38,22 @@ Feature: versioning of the project
           - merge_requests
 
       versioning:
-        image: python:3.6
+        image: python:3.6-alpine
         stage: versioning
+        before_script:
+          - apk add --update npm
+          - npm install -g semantic-release@15.13.19
+          - npm install -g @semantic-release/changelog@3.0.4
+          - npm install -g @semantic-release/exec@3.3.5
+          - npm install -g @semantic-release/git@7.0.16
+          - npm install -g @semantic-release/gitlab@3.1.7
         script:
-          - echo "Simulate versioning stage successful"
+          - semantic
         only:
           - master
 
       release:
-        image: python:3.6
+        image: python:3.6-alpine
         stage: release
         script:
           - echo "Simulate release stage successful"

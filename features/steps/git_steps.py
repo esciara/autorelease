@@ -55,6 +55,7 @@ def step_create_tag(context, tag_name):
     context.repo.create_tag(tag_name)
 
 
+@when('I push the repo')
 @given('the repo is pushed')
 def step_push_repo(context):
     # context.repo.git.push(f"{branch_name}:{branch_name}", force=True)
