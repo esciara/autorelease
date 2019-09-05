@@ -91,20 +91,28 @@ Feature: Using semantic-release
     Given a repo tag "v0.0.1" on the repo head
     And a file named "__version__.py" with:
         """
+        1
         version = "0.0.1"
+        moreversion = "0.0.1"
+        version = "0.0.1" bla
+        version = "0.0.1"
+        1
         """
-    And a file named ".bumpversion.cfg" with:
+    And a file named "other_version.py" with:
         """
-        [bumpversion]
-        current_version = 0.0.1
-        commit = False
-        tag = False
-
-        [bumpversion:file:__version__.py]
-        search = version = "{current_version}"
-        replace = version = "{new_version}"
+        1
+        other_version = "0.0.1"
+        more other_version = "0.0.1"
+        other_version = "0.0.1" bla
+        other_version = "0.0.1"
+        1
         """
-    Given a file named ".releaserc" with:
+    And an executable file named "find_and_replace_versions.sh" with:
+        """
+        sed -i -e "s/^version = \"${1}\"$/version = \"${2}\"/g" __version__.py
+        sed -i -e "s/^other_version = \"${1}\"$/other_version = \"${2}\"/g" other_version.py
+        """
+    And a file named ".releaserc" with:
         """
         {
           "plugins": [
@@ -112,8 +120,7 @@ Feature: Using semantic-release
             "@semantic-release/release-notes-generator",
             "@semantic-release/changelog",
             ["@semantic-release/exec", {
-              "verifyConditionsCmd": "bump2version -h",
-              "prepareCmd": "bump2version --current-version ${lastRelease.version} --new-version ${nextRelease.version} minor"
+              "prepareCmd": "./find_and_replace_versions.sh ${lastRelease.version} ${nextRelease.version}"
             }],
             ["@semantic-release/git", {
               "assets": [["**", "!.git", "!**/node_modules"]]
@@ -131,9 +138,26 @@ Feature: Using semantic-release
     Then it should pass
     And the file "__version__.py" should contain:
         """
+        1
         version = "0.0.2"
+        moreversion = "0.0.1"
+        version = "0.0.1" bla
+        version = "0.0.2"
+        1
         """
-    And the repo head commit should contain the file "__version__.py"
+    And the file "other_version.py" should contain:
+        """
+        1
+        other_version = "0.0.2"
+        more other_version = "0.0.1"
+        other_version = "0.0.1" bla
+        other_version = "0.0.2"
+        1
+        """
+    And the repo head commit should contain the files:
+      | filename         |
+      | __version__.py   |
+      | other_version.py |
 
 
   Scenario: Publish a python package to a pypi server

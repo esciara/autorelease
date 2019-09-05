@@ -29,7 +29,6 @@ PyHamcrest = {version = "^1.9", optional = true}
 
 [tool.poetry.dev-dependencies]
 tox = "^3.13"
-bump2version = "^0.5.10"
 
 
 [tool.commitizen]

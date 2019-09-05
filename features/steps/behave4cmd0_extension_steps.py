@@ -2,6 +2,18 @@ from behave import given, when, then, step
 from behave4cmd0 import command_steps
 from behave4cmd0 import textutil
 
+
+# -----------------------------------------------------------------------------
+# STEPS: Behave4Cmd0 extension related steps
+# TYPE: @given
+# -----------------------------------------------------------------------------
+@given('an executable file named "{filename}" with:')
+@given('an executable file named "{filename}" with')
+def step_an_executable_file_named_filename_with(context, filename):
+    command_steps.step_a_file_named_filename_with(context, filename)
+    command_steps.step_i_successfully_run_command(context, f"chmod +x {filename}")
+
+
 # -----------------------------------------------------------------------------
 # STEPS: Behave4Cmd0 extension related steps
 # TYPE: @then
