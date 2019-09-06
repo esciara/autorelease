@@ -125,7 +125,6 @@ def _cleanup_repo_tags(repo):
         repo.git.push("--delete",
                       repo.remotes.origin,
                       *tags)
-        print("voila")
 
 
 def _cleanup_repo_gitlab_releases(gitlab_project):
