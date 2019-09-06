@@ -114,7 +114,7 @@ def setup_gitlab_project(context):
     if gitlab_project is None:
         # In case the num of projects is limited to 2 per user (this what I found
         # in a company), wait until projects are effectively deleted
-        while len(gitlab_client.projects.list(owned=True, search=project_name_prefix)) > 0:
+        while gitlab_client.projects.list(owned=True, search=project_name_prefix):
             time.sleep(1.)
         gitlab_project = gitlab_client.projects.create({"name": project_name})
     # Unprotect all protected branches
