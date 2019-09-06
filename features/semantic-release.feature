@@ -57,7 +57,7 @@ Feature: Using semantic-release
           ],
         }
         """
-    And I set the GITLAB_TOKEN, GITLAB_URL and GITLAB_PREFIX environment variables for the @semantic-release/gitlab plugin
+    And the GITLAB_TOKEN, GITLAB_URL and GITLAB_PREFIX environment variables for the @semantic-release/gitlab plugin are properly set
     And a file named "sample_file" with:
         """
         Lorem ipsum
@@ -69,7 +69,7 @@ Feature: Using semantic-release
     When I run semantic-release on current branch and with args "--no-ci"
     Then it should pass
     And the repo head commit should be tagged "v0.0.1"
-    And gitlab should have a release with tag name "v0.0.1"
+    And GitLab should have a release with tag name "v0.0.1"
     And a file named "CHANGELOG.md" should exist
     And the repo head commit should contain the file "CHANGELOG.md"
     And the file "CHANGELOG.md" should contain (templated):
@@ -133,7 +133,7 @@ Feature: Using semantic-release
         """
         fix: This is a commit for functional tests.
         """
-    And I set the GITLAB_TOKEN, GITLAB_URL and GITLAB_PREFIX environment variables for the @semantic-release/gitlab plugin
+    And the GITLAB_TOKEN, GITLAB_URL and GITLAB_PREFIX environment variables for the @semantic-release/gitlab plugin are properly set
     When I run semantic-release on current branch and with args "--no-ci"
     Then it should pass
     And the file "__version__.py" should contain:

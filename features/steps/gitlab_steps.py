@@ -26,7 +26,7 @@ def step_create_pr(context, source_branch_name, target_branch_name):
     )
 
 
-@given('I set on GitLab the GITLAB_TOKEN environment variable for the @semantic-release/gitlab plugin')
+@given('on GitLab the GITLAB_TOKEN environment variable for the @semantic-release/gitlab plugin is properly set')
 def step_set_env_variables_for_semantic_release_gitlab(context):
     try:
         variable = context.gitlab_project.variables.get("GITLAB_TOKEN")
@@ -51,18 +51,7 @@ def step_merge_pr(context):
     context.gitlab_project_mergerequest.merge()
 
 
-# -----------------------------------------------------------------------------
-# STEPS: GitLab related steps
-# TYPE: @then
-# -----------------------------------------------------------------------------
-
-
-@then('gitlab should have a release with tag name "{tag_name}"')
-def step_gitlab_should_have_release(context, tag_name):
-    assert_that([r.tag_name for r in context.gitlab_project.releases.list()], has_item(tag_name))
-
-
-@then('I wait for the CI/CD pipeline to successfully complete')
+@when('I wait for the CI/CD pipeline to successfully complete')
 def step_wait_ci_cd_successfully_complete(context):
     branch = context.repo.head.ref.name
     commit = context.repo.head.commit
@@ -86,3 +75,14 @@ def step_wait_ci_cd_successfully_complete(context):
                                               "don't know how to deal with it. You will need to update the"
                                               "testing code => aborting.")
     assert_that(pipelines[0].status, equal_to('success'))
+
+
+# -----------------------------------------------------------------------------
+# STEPS: GitLab related steps
+# TYPE: @then
+# -----------------------------------------------------------------------------
+
+
+@then('GitLab should have a release with tag name "{tag_name}"')
+def step_gitlab_should_have_release(context, tag_name):
+    assert_that([r.tag_name for r in context.gitlab_project.releases.list()], has_item(tag_name))

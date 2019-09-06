@@ -28,7 +28,7 @@ Feature: CI/CD pipeline
           ],
         }
         """
-    And I set on GitLab the GITLAB_TOKEN environment variable for the @semantic-release/gitlab plugin
+    And on GitLab the GITLAB_TOKEN environment variable for the @semantic-release/gitlab plugin is properly set
     And a file named ".gitlab-ci.yml" with:
         # Some lines to help debug can be found at the end of this file
         """
@@ -66,7 +66,26 @@ Feature: CI/CD pipeline
         fix: This is a fix commit for functional tests.
         """
     When I push the repo
-    Then I wait for the CI/CD pipeline to successfully complete
+    And I wait for the CI/CD pipeline to successfully complete
+    And I pull the repo
+    Then the repo head commit should be tagged "v0.0.1"
+    And Gitlab should have a release with tag name "v0.0.1"
+    And a file named "CHANGELOG.md" should exist
+    And the repo head commit should contain the file "CHANGELOG.md"
+    And the file "CHANGELOG.md" should contain (templated):
+#        # Changelog
+#
+#        All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+#
+        """
+        ## [0.0.1]({__GITLAB_PROJECT_URL__}/compare/v0.0.0...v0.0.1) ({__TEST_RUN_START_DATE__})
+
+
+        ### Bug Fixes
+
+        * This is a fix commit for functional tests. ([{__COMMIT_HEAD_1_SHA__}]({__COMMIT_HEAD_1_URL__}))
+        """
+    And GitLab should have a release with tag name "v0.0.1"
 
 ##############################################
 #       TO keep for feature debug needs      #
