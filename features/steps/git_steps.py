@@ -58,18 +58,11 @@ def step_create_tag(context, tag_name):
 @when('I push the repo')
 @given('the repo is pushed')
 def step_push_repo(context):
-    # context.repo.git.push(f"{branch_name}:{branch_name}", force=True)
-    # context.repo.git.push("origin", f"{branch_name}:{branch_name}", force=True)
-    # context.repo.remotes.origin.push(set_upstream=True, force=True)
-    # context.repo.git.push("--set-upstream", "origin", branch_name, force=True)
-    # print(f"remote_name: {context.repo.head.ref.remote_name}")
-    # origin = context.repo.remotes.origin
-    # context.repo.create_head('master', origin.refs.master)
-    # context.repo.remotes.origin.push(force=True)
     context.repo.git.push("--set-upstream",
                           context.repo.remotes.origin,
-                          context.repo.head.ref)
-    # force=True)
+                          context.repo.head.ref,
+                          "--tags",
+                          )
 
 
 @step('I pull the repo')

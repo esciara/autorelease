@@ -119,11 +119,13 @@ def _cleanup_repo_from_previous_test_runs_conflicting_changes(context):
 
 
 def _cleanup_repo_tags(repo):
-    for tag in repo.tags:
-        repo.delete_tag(tag)
+    tags = [tag.name for tag in repo.tags]
+    if tags:
+        repo.delete_tag(*tags)
         repo.git.push("--delete",
                       repo.remotes.origin,
-                      tag)
+                      *tags)
+        print("voila")
 
 
 def _cleanup_repo_gitlab_releases(gitlab_project):
