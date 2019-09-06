@@ -1,3 +1,5 @@
+import time
+
 from behave import given, when, then, step
 from behave.step_registry import given
 from steps.git_steps import _append_suffix_to_branch
@@ -58,3 +60,29 @@ def step_merge_pr(context):
 @then('gitlab should have a release with tag name "{tag_name}"')
 def step_gitlab_should_have_release(context, tag_name):
     assert_that([r.tag_name for r in context.gitlab_project.releases.list()], has_item(tag_name))
+
+
+@then('I wait for the CI/CD pipeline to successfully complete')
+def step_wait_ci_cd_successfully_complete(context):
+    branch = context.repo.head.ref.name
+    commit = context.repo.head.commit
+    pipelines = []
+    start_time = time.time()
+    timeout = 10
+    while not pipelines and time.time() < start_time + timeout:
+        time.sleep(1.)
+        pipelines = context.gitlab_project.pipelines.list(ref=branch, sha=commit)
+    assert_that(pipelines, is_not(empty()), f"No pipelines found for branch '{branch}' at commit '{commit}' "
+                                            f"after a timeout of {timeout} seconds.")
+    assert_that(pipelines, has_length(1), "At checkpoint 1 of 2 : "
+                                          f"Too many pipelines for branch '{branch}' at commit '{commit}': "
+                                          "don't know how to deal with it. You will need to update the"
+                                          "testing code => aborting.")
+    while pipelines[0].status in ["running", "pending"]:
+        time.sleep(1.)
+        pipelines = context.gitlab_project.pipelines.list(ref=branch, sha=commit)
+        assert_that(pipelines, has_length(1), "At checkpoint 2 of 2 : "
+                                              f"Too many pipelines for branch '{branch}' at commit '{commit}': "
+                                              "don't know how to deal with it. You will need to update the"
+                                              "testing code => aborting.")
+    assert_that(pipelines[0].status, equal_to('success'))

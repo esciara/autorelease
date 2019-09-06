@@ -66,6 +66,7 @@ Feature: CI/CD pipeline
         fix: This is a fix commit for functional tests.
         """
     When I push the repo
+    Then I wait for the CI/CD pipeline to successfully complete
 
 ##############################################
 #       TO keep for feature debug needs      #
