@@ -51,10 +51,8 @@ Feature: CI/CD pipeline
             - npm install -g @semantic-release/git@7.0.16
             - npm install -g @semantic-release/gitlab@3.1.7
             - echo $CI_API_V4_URL
-            - export GITLAB_URL=`echo $CI_API_V4_URL | sed "s/\/api/%/" | cut -d'%' -f1`
-            - echo $GITLAB_URL
-            - export GITLAB_PREFIX=`echo $CI_API_V4_URL | sed -e s,$GITLAB_URL,,g`
-            - echo $GITLAB_PREFIX
+            - export GITLAB_URL=`echo $CI_API_V4_URL | sed s,/api,%, | cut -d'%' -f1` && echo $GITLAB_URL
+            - export GITLAB_PREFIX=`echo $CI_API_V4_URL | sed s,$GITLAB_URL,,` && echo $GITLAB_PREFIX
           script:
             - npx semantic-release --branch $CI_COMMIT_REF_NAME --repository-url $CI_REPOSITORY_URL --debug
           only:
