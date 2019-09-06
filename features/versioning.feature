@@ -91,18 +91,19 @@ Feature: versioning of the project
 #      - this is a fix. [{__GIT_COMMITER__}]
 #      """
 #
-  Scenario: Generate change logs and update version following a PR merge to master
-    Given a repo branch named "pr_branch"
-    And the repo branch "pr_branch" is checked out
-    And the repo index is committed with message:
-      """
-      fix: this is a fix.
-      """
-    And the repo is pushed
-    And a merge request from "pr_branch" to "master"
-    When I merge the merge request
-#    And I wait for the CI/CD pipeline to complete successfully
-    And I pull the repo
-    And I checkout the "master" branch
-    Then the repo head commit should contain the file "ChangeLog.rst"
-    And the repo head commit should be tagged "v0.0.2"
+
+#  Scenario: Generate change logs and update version following a PR merge to master
+#    Given a repo branch named "pr_branch"
+#    And the repo branch "pr_branch" is checked out
+#    And the repo index is committed with message:
+#      """
+#      fix: this is a fix.
+#      """
+#    And the repo is pushed
+#    And a merge request from "pr_branch" to "master"
+#    When I merge the merge request
+##    And I wait for the CI/CD pipeline to complete successfully
+#    And I pull the repo
+#    And I checkout the "master" branch
+#    Then the repo head commit should contain the file "ChangeLog.rst"
+#    And the repo head commit should be tagged "v0.0.2"
